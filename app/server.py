@@ -158,6 +158,10 @@ class FavoriteToggle(BaseModel):
     space_id: int
 
 
+class BookingExtend(BaseModel):
+    end_at: datetime
+
+
 @app.get("/")
 def index():
     return FileResponse(STATIC / "index.html")
@@ -319,6 +323,80 @@ def checkout(booking_id: int):
     conn.commit()
     conn.close()
     return {"ok":True,"checkout_at":now}
+
+
+@app.post("/api/bookings/{booking_id}/cancel")
+def cancel_booking(booking_id: int):
+    conn = db()
+    row = conn.execute(
+        "SELECT * FROM bookings WHERE id=? AND user_id=1",
+        (booking_id,),
+    ).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(404, "Reserva no encontrada")
+    if row["status"] != "confirmed":
+        conn.close()
+        raise HTTPException(409, "Solo puedes cancelar una reserva que aún no ha empezado")
+    conn.execute("UPDATE bookings SET status='cancelled' WHERE id=?", (booking_id,))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "status": "cancelled"}
+
+
+@app.post("/api/bookings/{booking_id}/extend")
+def extend_booking(booking_id: int, payload: BookingExtend):
+    conn = db()
+    row = conn.execute(
+        """SELECT b.*, s.price_hour
+           FROM bookings b JOIN spaces s ON s.id=b.space_id
+           WHERE b.id=? AND b.user_id=1""",
+        (booking_id,),
+    ).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(404, "Reserva no encontrada")
+    if row["status"] not in ("confirmed", "active"):
+        conn.close()
+        raise HTTPException(409, "Esta reserva ya no se puede ampliar")
+
+    current_end = datetime.fromisoformat(row["end_at"])
+    new_end = payload.end_at
+    if current_end.tzinfo and not new_end.tzinfo:
+        new_end = new_end.replace(tzinfo=current_end.tzinfo)
+    if new_end <= current_end:
+        conn.close()
+        raise HTTPException(400, "La nueva hora de salida debe ser posterior a la actual")
+
+    start = datetime.fromisoformat(row["start_at"])
+    hours = (new_end - start).total_seconds() / 3600
+    if hours > 72:
+        conn.close()
+        raise HTTPException(400, "La demo admite hasta 72 horas")
+
+    conflict = conn.execute(
+        """SELECT 1 FROM bookings
+           WHERE space_id=? AND id<>? AND status IN ('confirmed','active')
+           AND NOT (end_at<=? OR start_at>=?) LIMIT 1""",
+        (row["space_id"], booking_id, row["start_at"], new_end.isoformat()),
+    ).fetchone()
+    if conflict:
+        conn.close()
+        raise HTTPException(409, "No se puede ampliar: hay otra reserva después")
+
+    subtotal = round(row["price_hour"] * hours, 2)
+    service_fee = round(max(0.75, subtotal * 0.10), 2)
+    total = round(subtotal + service_fee, 2)
+    conn.execute(
+        """UPDATE bookings
+           SET end_at=?, hours=?, subtotal=?, service_fee=?, total=?
+           WHERE id=?""",
+        (new_end.isoformat(), round(hours, 2), subtotal, service_fee, total, booking_id),
+    )
+    conn.commit()
+    updated = conn.execute("SELECT * FROM bookings WHERE id=?", (booking_id,)).fetchone()
+    conn.close()
+    return dict(updated)
 
 
 @app.get("/api/bookings/{booking_id}/access")
