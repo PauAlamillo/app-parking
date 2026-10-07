@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Parking Privado — MVP</title>
+<style>
+  :root{
+    --bg:#0b0f14;
+    --panel:#121821;
+    --panel-2:#18212c;
+    --text:#f4f7fb;
+    --muted:#96a2b4;
+    --line:#273342;
+    --accent:#59e2b2;
+    --accent-2:#7cf1c8;
+    --danger:#ff7979;
+    --shadow:0 18px 50px rgba(0,0,0,.28);
+    --radius:20px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(89,226,178,.08), transparent 30%),
+      linear-gradient(180deg,#0b0f14,#0d1219 55%,#0a0e13);
+    min-height:100vh;
+  }
+  button,input,select{font:inherit}
+  .app{min-height:100vh}
+  .topbar{
+    height:72px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 28px;
+    border-bottom:1px solid var(--line);
+    background:rgba(11,15,20,.88);
+    backdrop-filter:blur(14px);
+    position:sticky;top:0;z-index:30;
+  }
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:-.03em}
+  .mark{
+    width:34px;height:34px;border-radius:10px;
+    background:linear-gradient(135deg,var(--accent),#34a7ff);
+    display:grid;place-items:center;color:#07130f;font-weight:900;
+    box-shadow:0 0 25px rgba(89,226,178,.22);
+  }
+  .mode-switch{
+    display:flex;gap:5px;padding:5px;background:#0d131a;border:1px solid var(--line);border-radius:999px;
+  }
+  .mode-switch button{
+    border:0;background:transparent;color:var(--muted);padding:9px 14px;border-radius:999px;cursor:pointer;
+  }
+  .mode-switch button.active{background:var(--panel-2);color:var(--text)}
+  .avatar{
+    width:36px;height:36px;border-radius:50%;background:#243041;display:grid;place-items:center;color:#dfe6ee;font-weight:700;
+  }
+  .main{display:grid;grid-template-columns:440px 1fr;min-height:calc(100vh - 72px)}
+  .sidebar{
+    padding:24px;
+    border-right:1px solid var(--line);
+    background:rgba(14,19,26,.72);
+    overflow:auto;
+  }
+  .eyebrow{color:var(--accent);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.14em}
+  h1{font-size:30px;line-height:1.05;margin:10px 0 8px;letter-spacing:-.04em}
+  .sub{color:var(--muted);line-height:1.5;margin:0 0 18px}
+  .searchbar{
+    display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:12px
+  }
+  .searchbar input,.filters select,.field input,.field select{
+    width:100%;padding:13px 14px;background:#0d131a;border:1px solid var(--line);border-radius:14px;color:var(--text);outline:none;
+  }
+  .searchbar button,.primary{
+    border:0;background:var(--accent);color:#072016;font-weight:800;padding:0 18px;border-radius:14px;cursor:pointer;
+  }
+  .filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+  .results-head{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}
+  .results-head strong{font-size:15px}
+  .results-head span{font-size:12px;color:var(--muted)}
+  .cards{display:grid;gap:12px}
+  .card{
+    background:linear-gradient(180deg,#131b25,#111821);
+    border:1px solid var(--line);border-radius:18px;padding:14px;
+    display:grid;grid-template-columns:96px 1fr;gap:14px;cursor:pointer;
+    transition:.18s ease;box-shadow:0 8px 24px rgba(0,0,0,.12);
+  }
+  .card:hover,.card.selected{border-color:rgba(89,226,178,.55);transform:translateY(-1px)}
+  .thumb{
+    min-height:96px;border-radius:14px;
+    background:
+      linear-gradient(160deg,rgba(255,255,255,.12),transparent 40%),
+      linear-gradient(135deg,#394655,#1d2631);
+    position:relative;overflow:hidden;
+  }
+  .thumb:after{
+    content:"P";position:absolute;right:10px;bottom:8px;
+    width:30px;height:30px;border-radius:8px;background:var(--accent);color:#082016;
+    display:grid;place-items:center;font-weight:900;
+  }
+  .card h3{margin:2px 0 6px;font-size:15px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--muted)}
+  .badge{padding:5px 8px;background:#0d131a;border:1px solid var(--line);border-radius:999px}
+  .price{margin-top:10px;font-size:20px;font-weight:800}
+  .price span{font-size:12px;color:var(--muted);font-weight:500}
+  .map-wrap{position:relative;overflow:hidden;background:#0e141c}
+  .map{
+    position:absolute;inset:0;
+    background:
+      linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px),
+      radial-gradient(circle at 25% 30%,rgba(89,226,178,.06),transparent 20%),
+      #101720;
+    background-size:48px 48px,48px 48px,auto,auto;
+  }
+  .road{position:absolute;background:#1b2531;border:1px solid #253342;border-radius:999px;opacity:.95}
+  .r1{width:90%;height:46px;left:5%;top:25%;transform:rotate(-8deg)}
+  .r2{width:74%;height:42px;left:16%;top:61%;transform:rotate(13deg)}
+  .r3{width:42px;height:90%;left:48%;top:4%;transform:rotate(4deg)}
+  .block{position:absolute;border:1px solid #263240;background:#151d27;border-radius:18px}
+  .b1{left:8%;top:8%;width:26%;height:19%}.b2{left:62%;top:10%;width:24%;height:21%}
+  .b3{left:10%;top:42%;width:28%;height:14%}.b4{left:61%;top:40%;width:29%;height:16%}
+  .b5{left:15%;top:73%;width:25%;height:17%}.b6{left:60%;top:72%;width:25%;height:16%}
+  .pin{
+    position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:6;
+    background:var(--accent);color:#082016;border:4px solid #0b1118;border-radius:999px;
+    padding:8px 11px;font-weight:900;box-shadow:0 8px 20px rgba(0,0,0,.3);
+  }
+  .pin small{font-size:10px;font-weight:700}
+  .pin.active{outline:3px solid rgba(89,226,178,.23);transform:translate(-50%,-50%) scale(1.08)}
+  .map-card{
+    position:absolute;left:24px;bottom:24px;z-index:10;width:min(390px,calc(100% - 48px));
+    background:rgba(16,23,32,.95);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow);backdrop-filter:blur(12px)
+  }
+  .map-card h2{font-size:18px;margin:0 0 6px}
+  .map-card .row{display:flex;justify-content:space-between;gap:10px;align-items:end}
+  .map-card .actions{display:flex;gap:8px;margin-top:14px}
+  .secondary{
+    border:1px solid var(--line);background:#121a23;color:var(--text);font-weight:700;padding:12px 14px;border-radius:13px;cursor:pointer
+  }
+  .modal{
+    position:fixed;inset:0;background:rgba(0,0,0,.58);display:none;align-items:center;justify-content:center;padding:22px;z-index:80
+  }
+  .modal.show{display:flex}
+  .modal-card{
+    width:min(540px,100%);background:#111821;border:1px solid var(--line);border-radius:24px;padding:22px;box-shadow:var(--shadow)
+  }
+  .modal-card h2{margin:0 0 6px}
+  .modal-card p{color:var(--muted)}
+  .field{margin:12px 0}.field label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+  .summary{
+    display:grid;grid-template-columns:1fr auto;gap:8px;padding:14px;background:#0d131a;border:1px solid var(--line);border-radius:16px;margin:14px 0
+  }
+  .summary div:nth-child(2n){text-align:right}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+  .owner{display:none}
+  .owner.show{display:block}
+  .driver.hidden{display:none}
+  .owner-panel{max-width:980px;margin:0 auto;padding:32px}
+  .owner-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+  .panel{
+    background:linear-gradient(180deg,#131b25,#111821);border:1px solid var(--line);border-radius:22px;padding:18px
+  }
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+  .kpi{padding:16px;border:1px solid var(--line);border-radius:18px;background:#0e151d}
+  .kpi b{display:block;font-size:26px;margin-top:4px}
+  .schedule{display:grid;gap:8px;margin-top:10px}
+  .day{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#0e151d}
+  .day span{color:var(--muted);font-size:12px}
+  .toggle{width:40px;height:22px;background:#273342;border-radius:999px;position:relative;cursor:pointer}
+  .toggle:after{content:"";position:absolute;width:16px;height:16px;top:3px;left:4px;background:#8a96a5;border-radius:50%;transition:.2s}
+  .toggle.on{background:rgba(89,226,178,.25)}
+  .toggle.on:after{left:20px;background:var(--accent)}
+  .big-btn{width:100%;padding:14px;border:0;border-radius:15px;background:var(--accent);color:#082016;font-weight:900;cursor:pointer;margin-top:10px}
+  .toast{
+    position:fixed;right:22px;bottom:22px;background:#121a23;border:1px solid var(--line);padding:13px 16px;border-radius:14px;box-shadow:var(--shadow);display:none;z-index:120
+  }
+  .toast.show{display:block}
+  @media(max-width:900px){
+    .main{grid-template-columns:1fr}
+    .sidebar{border-right:0;border-bottom:1px solid var(--line)}
+    .map-wrap{min-height:620px}
+    .owner-grid{grid-template-columns:1fr}
+  }
+  @media(max-width:620px){
+    .topbar{padding:0 14px}.brand span{display:none}
+    .sidebar{padding:16px}.main{display:block}
+    .filters{grid-template-columns:1fr}
+    .card{grid-template-columns:84px 1fr}
+    h1{font-size:26px}
+    .map-wrap{min-height:560px}
+    .map-card{left:14px;bottom:14px;width:calc(100% - 28px)}
+    .owner-panel{padding:18px}
+    .kpis{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="mark">P</div><span>Parking Privado</span></div>
+    <div class="mode-switch">
+      <button id="driverBtn" class="active">Buscar parking</button>
+      <button id="ownerBtn">Mi plaza</button>
+    </div>
+    <div class="avatar">PA</div>
+  </header>
+
+  <section class="driver">
+    <main class="main">
+      <aside class="sidebar">
+        <div class="eyebrow">Aparca mejor</div>
+        <h1>Encuentra una plaza privada disponible ahora.</h1>
+        <p class="sub">Reserva por horas en parkings que sus propietarios no están utilizando.</p>
+
+        <div class="searchbar">
+          <input id="searchInput" value="Hospital Clínic, Barcelona" aria-label="Destino" />
+          <button onclick="fakeSearch()">Buscar</button>
+        </div>
+
+        <div class="filters">
+          <select id="timeFilter" onchange="applyFilters()">
+            <option value="all">Ahora · 4 horas</option>
+            <option value="2">2 horas</option>
+            <option value="8">Todo el día</option>
+          </select>
+          <select id="priceFilter" onchange="applyFilters()">
+            <option value="99">Cualquier precio</option>
+            <option value="2">Hasta 2 €/h</option>
+            <option value="1.5">Hasta 1,50 €/h</option>
+          </select>
+        </div>
+
+        <div class="results-head">
+          <strong id="resultCount">5 plazas disponibles</strong>
+          <span>Ordenadas por distancia</span>
+        </div>
+        <div class="cards" id="cards"></div>
+      </aside>
+
+      <section class="map-wrap">
+        <div class="map">
+          <div class="road r1"></div><div class="road r2"></div><div class="road r3"></div>
+          <div class="block b1"></div><div class="block b2"></div><div class="block b3"></div>
+          <div class="block b4"></div><div class="block b5"></div><div class="block b6"></div>
+          <div id="pins"></div>
+        </div>
+        <div class="map-card" id="mapCard"></div>
+      </section>
+    </main>
+  </section>
+
+  <section class="owner">
+    <div class="owner-panel">
+      <div class="eyebrow">Panel del propietario</div>
+      <h1>Tu plaza trabaja cuando tú no estás.</h1>
+      <p class="sub">Configura tu rutina una vez y deja que la plataforma gestione las horas libres.</p>
+
+      <div class="kpis">
+        <div class="kpi"><span class="sub">Ingresos este mes</span><b>184,20 €</b></div>
+        <div class="kpi"><span class="sub">Horas alquiladas</span><b>126 h</b></div>
+        <div class="kpi"><span class="sub">Ocupación disponible</span><b>61%</b></div>
+      </div>
+
+      <div class="owner-grid">
+        <div class="panel">
+          <h2 style="margin-top:0">Horario automático</h2>
+          <p class="sub">La plaza solo se ofrece cuando tú has indicado que estará libre.</p>
+          <div class="schedule" id="schedule"></div>
+        </div>
+
+        <div class="panel">
+          <h2 style="margin-top:0">Estado actual</h2>
+          <div style="padding:18px;border-radius:18px;background:#0e151d;border:1px solid var(--line);margin:14px 0">
+            <div class="eyebrow">Disponible</div>
+            <div style="font-size:28px;font-weight:900;margin-top:6px">Hasta las 17:15</div>
+            <p class="sub" style="margin:8px 0 0">Return Shield activo. Tu plaza se bloqueará 45 min antes de tu hora de regreso.</p>
+          </div>
+          <button class="big-btn" onclick="manualRelease()">He salido · Liberar mi plaza</button>
+          <button class="secondary" style="width:100%;margin-top:10px" onclick="openAddSpot()">Editar plaza</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="modal" id="bookingModal">
+  <div class="modal-card">
+    <h2>Confirmar reserva</h2>
+    <p id="modalTitle">Parking seleccionado</p>
+
+    <div class="field">
+      <label>Entrada</label>
+      <input type="time" id="startTime" value="12:00">
+    </div>
+    <div class="field">
+      <label>Salida</label>
+      <input type="time" id="endTime" value="16:00">
+    </div>
+
+    <div class="summary">
+      <div>Alquiler</div><div id="rentAmount">8,00 €</div>
+      <div>Servicio</div><div id="feeAmount">1,60 €</div>
+      <div><strong>Total</strong></div><div><strong id="totalAmount">9,60 €</strong></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeBooking()">Cancelar</button>
+      <button class="primary" style="padding:12px 18px" onclick="confirmBooking()">Reservar ahora</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="spotModal">
+  <div class="modal-card">
+    <h2>Editar tu plaza</h2>
+    <p>Datos mínimos necesarios para publicar una plaza.</p>
+    <div class="field"><label>Dirección</label><input value="C/ Mallorca, Barcelona"></div>
+    <div class="field"><label>Precio por hora</label><input value="2,00 €"></div>
+    <div class="field"><label>Tipo</label><select><option>Garaje cubierto</option><option>Exterior</option></select></div>
+    <div class="field"><label>Tamaño máximo</label><select><option>Coche mediano</option><option>SUV</option><option>Moto</option></select></div>
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeAddSpot()">Cancelar</button>
+      <button class="primary" style="padding:12px 18px" onclick="saveSpot()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const spots = [
+  {id:1,name:"Garaje privado · Mallorca",distance:"180 m",price:1.50,until:"17:30",type:"Cubierto",rating:"4,9",x:44,y:31},
+  {id:2,name:"Parking particular · Casanova",distance:"320 m",price:2.00,until:"18:00",type:"Cubierto",rating:"4,8",x:58,y:43},
+  {id:3,name:"Plaza amplia · Rosselló",distance:"410 m",price:1.80,until:"16:45",type:"SUV",rating:"4,7",x:34,y:55},
+  {id:4,name:"Garaje privado · Villarroel",distance:"590 m",price:2.50,until:"20:00",type:"Cubierto",rating:"5,0",x:69,y:63},
+  {id:5,name:"Plaza privada · Provença",distance:"730 m",price:1.25,until:"17:00",type:"Compacto",rating:"4,6",x:24,y:71}
+];
+let selectedId = 1;
+let visibleSpots = [...spots];
+
+function euro(v){ return v.toFixed(2).replace(".",",")+" €"; }
+
+function render(){
+  const cards = document.getElementById("cards");
+  const pins = document.getElementById("pins");
+  cards.innerHTML = "";
+  pins.innerHTML = "";
+  visibleSpots.forEach(s=>{
+    const c = document.createElement("div");
+    c.className = "card"+(s.id===selectedId?" selected":"");
+    c.onclick=()=>selectSpot(s.id);
+    c.innerHTML = `
+      <div class="thumb"></div>
+      <div>
+        <h3>${s.name}</h3>
+        <div class="meta">
+          <span>${s.distance}</span><span>★ ${s.rating}</span>
+          <span class="badge">${s.type}</span><span class="badge">hasta ${s.until}</span>
+        </div>
+        <div class="price">${euro(s.price)} <span>/ hora</span></div>
+      </div>`;
+    cards.appendChild(c);
+
+    const p = document.createElement("button");
+    p.className="pin"+(s.id===selectedId?" active":"");
+    p.style.left=s.x+"%"; p.style.top=s.y+"%";
+    p.onclick=()=>selectSpot(s.id);
+    p.innerHTML = `${String(s.price).replace(".",",")}€ <small>/h</small>`;
+    pins.appendChild(p);
+  });
+  document.getElementById("resultCount").textContent = `${visibleSpots.length} plazas disponibles`;
+  renderMapCard();
+}
+
+function renderMapCard(){
+  const s = spots.find(x=>x.id===selectedId) || visibleSpots[0];
+  if(!s){
+    document.getElementById("mapCard").innerHTML="<h2>No hay plazas con estos filtros</h2>";
+    return;
+  }
+  document.getElementById("mapCard").innerHTML = `
+    <div class="row">
+      <div>
+        <h2>${s.name}</h2>
+        <div class="meta"><span>${s.distance}</span><span>★ ${s.rating}</span><span>${s.type}</span></div>
+      </div>
+      <div class="price">${euro(s.price)} <span>/h</span></div>
+    </div>
+    <p class="sub" style="margin:10px 0 0">Disponible ahora hasta las ${s.until}. Acceso confirmado tras la reserva.</p>
+    <div class="actions">
+      <button class="primary" style="padding:12px 16px;flex:1" onclick="openBooking(${s.id})">Reservar</button>
+      <button class="secondary" onclick="toast('Añadido a favoritos')">♡</button>
+    </div>`;
+}
+
+function selectSpot(id){ selectedId=id; render(); }
+
+function applyFilters(){
+  const max = parseFloat(document.getElementById("priceFilter").value);
+  visibleSpots = spots.filter(s=>s.price<=max);
+  if(!visibleSpots.some(s=>s.id===selectedId) && visibleSpots[0]) selectedId=visibleSpots[0].id;
+  render();
+}
+
+function fakeSearch(){ toast("Zona actualizada · mostrando plazas cercanas"); }
+
+function openBooking(id){
+  selectedId=id;
+  const s=spots.find(x=>x.id===id);
+  document.getElementById("modalTitle").textContent=s.name+" · "+euro(s.price)+"/h";
+  recalcBooking();
+  document.getElementById("bookingModal").classList.add("show");
+}
+function closeBooking(){document.getElementById("bookingModal").classList.remove("show")}
+function recalcBooking(){
+  const s=spots.find(x=>x.id===selectedId);
+  const a=document.getElementById("startTime").value.split(":").map(Number);
+  const b=document.getElementById("endTime").value.split(":").map(Number);
+  let h=(b[0]+b[1]/60)-(a[0]+a[1]/60); if(h<=0)h=1;
+  const rent=s.price*h, fee=Math.max(rent*.20,.99), total=rent+fee;
+  document.getElementById("rentAmount").textContent=euro(rent);
+  document.getElementById("feeAmount").textContent=euro(fee);
+  document.getElementById("totalAmount").textContent=euro(total);
+}
+document.getElementById("startTime").addEventListener("change",recalcBooking);
+document.getElementById("endTime").addEventListener("change",recalcBooking);
+
+function confirmBooking(){
+  closeBooking();
+  toast("Reserva confirmada · acceso disponible en Mis reservas");
+}
+
+function toast(msg){
+  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+const days=["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+const schedule=document.getElementById("schedule");
+days.forEach((d,i)=>{
+  const active=i<5;
+  const el=document.createElement("div");
+  el.className="day";
+  el.innerHTML=`<div><strong>${d}</strong><br><span>${active?"08:00 — 17:15":"No disponible"}</span></div>
+  <div class="toggle ${active?"on":""}" onclick="this.classList.toggle('on')"></div>`;
+  schedule.appendChild(el);
+});
+
+document.getElementById("driverBtn").onclick=()=>{
+  document.querySelector(".driver").classList.remove("hidden");
+  document.querySelector(".owner").classList.remove("show");
+  document.getElementById("driverBtn").classList.add("active");
+  document.getElementById("ownerBtn").classList.remove("active");
+}
+document.getElementById("ownerBtn").onclick=()=>{
+  document.querySelector(".driver").classList.add("hidden");
+  document.querySelector(".owner").classList.add("show");
+  document.getElementById("ownerBtn").classList.add("active");
+  document.getElementById("driverBtn").classList.remove("active");
+}
+
+function manualRelease(){ toast("Tu plaza queda disponible hasta las 17:15"); }
+function openAddSpot(){document.getElementById("spotModal").classList.add("show")}
+function closeAddSpot(){document.getElementById("spotModal").classList.remove("show")}
+function saveSpot(){closeAddSpot();toast("Cambios guardados")}
+
+render();
+</script>
+</body>
+</html>
