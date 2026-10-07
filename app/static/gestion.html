@@ -2,40 +2,177 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>App Parquing · Área de gestión</title>
-<link rel="stylesheet" href="/static/partner.css">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1210">
+<title>App Parking · Área de gestión</title>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/gestion.css">
 </head>
 <body>
-<div class="shell">
-<aside class="sidebar">
-<a class="brand" href="#"><span class="brandmark">P</span><span><strong>App Parquing</strong><small>Área de gestión</small></span></a>
-<nav id="nav">
-<button class="nav active" data-view="home">⌂ <span>Inicio</span></button>
-<button class="nav" data-view="spaces">▣ <span>Plazas</span></button>
-<button class="nav" data-view="owners">◎ <span>Propietarios</span></button>
-<button class="nav" data-view="bookings">↔ <span>Reservas</span></button>
-<button class="nav" data-view="performance">↗ <span>Rendimiento</span></button>
-<button class="nav" data-view="promo">✦ <span>Promoción</span></button>
-</nav>
-<div class="sidebar-foot"><div class="agency-avatar">PA</div><div><b>Cuenta de gestión</b><small>Propietario / Partner</small></div></div>
-</aside>
-<main>
-<header><div><p class="eyebrow">Área de gestión</p><h1 id="pageTitle">Buenos días</h1><p id="pageSubtitle">Tus plazas y reservas, en un solo sitio.</p></div><div class="top-actions"><button class="ghost" id="copyLink">Compartir enlace</button><button class="primary" data-open="space">+ Añadir plaza</button></div></header>
-<section id="home" class="view active">
-<div class="hero-card"><div><span class="badge">● Todo en orden</span><h2>Convierte las horas libres de una plaza en ingresos.</h2><p>Publica y gestiona tus plazas de forma sencilla. Si gestionas plazas de terceros, también puedes invitarlos.</p><div class="hero-actions"><button class="primary" data-open="onboarding">Continuar configuración</button><button class="soft" data-view-jump="spaces">Ver mis plazas</button></div></div><div class="score"><span>Configuración</span><strong>78%</strong><small>2 pasos para empezar a captar reservas</small></div></div>
-<div class="metrics"><article><span>Plazas activas</span><strong>24</strong><small>+6 este mes</small></article><article><span>Horas reservadas</span><strong>386 h</strong><small>Últimos 30 días</small></article><article><span>Ingresos generados</span><strong>1.842 €</strong><small>Generados por tus plazas</small></article><article><span>Ingresos estimados</span><strong>276 €</strong><small>Estimación del mes</small></article></div>
-<div class="grid-two">
-<section class="panel"><div class="panel-head"><div><span class="kicker">PRÓXIMO PASO</span><h3>Activa tus plazas en minutos</h3></div><span class="pill">2/4</span></div><div class="steps"><button class="step done"><i>✓</i><span><b>Datos de la cuenta</b><small>Completado</small></span></button><button class="step done"><i>✓</i><span><b>Identidad y contacto</b><small>Completado</small></span></button><button class="step" data-open="import"><i>3</i><span><b>Añade tus plazas</b><small>Una a una o importando CSV</small></span><em>→</em></button><button class="step" data-open="owners"><i>4</i><span><b>Invita a propietarios</b><small>Ellos completan sus datos</small></span><em>→</em></button></div></section>
-<section class="panel"><div class="panel-head"><div><span class="kicker">HOY</span><h3>Actividad reciente</h3></div><button class="text-btn">Ver todo</button></div><div class="activity"><div><span class="dot green"></span><p><b>Reserva confirmada</b><small>C/ Aragón 182 · 09:00–14:00</small></p><strong>+14,50 €</strong></div><div><span class="dot blue"></span><p><b>Nueva plaza publicada</b><small>Laura G. aceptó tu invitación</small></p><strong>Ahora</strong></div><div><span class="dot amber"></span><p><b>Falta un dato</b><small>Plaza BCN-018 necesita altura máxima</small></p><strong>Revisar</strong></div></div></section>
-</div></section>
-<section id="spaces" class="view"><div class="toolbar"><div><h2>Plazas</h2><p>Gestiona disponibilidad, precio y estado.</p></div><div><button class="soft" data-open="import">Importar CSV</button><button class="primary" data-open="space">+ Nueva plaza</button></div></div><div class="panel table-wrap"><table><thead><tr><th>Plaza</th><th>Ciudad</th><th>Estado</th><th>Disponibilidad</th><th>Reservas</th><th>Ingresos</th></tr></thead><tbody id="spaceRows"></tbody></table></div></section>
-<section id="owners" class="view"><div class="toolbar"><div><h2>Propietarios</h2><p>Si gestionas plazas de terceros, invítalos y deja que completen sus datos desde el móvil.</p></div><button class="primary" data-open="owners">+ Invitar propietario</button></div><div id="ownerCards" class="owner-grid"></div></section>
-<section id="bookings" class="view"><div class="toolbar"><div><h2>Reservas</h2><p>Todo lo que está ocurriendo en tus plazas.</p></div></div><div class="empty-rich"><span>↔</span><h3>Vista de reservas preparada</h3><p>En la app real aparecerán reservas futuras, activas y completadas con filtros por plaza y propietario.</p></div></section>
-<section id="performance" class="view"><div class="toolbar"><div><h2>Rendimiento</h2><p>Entiende qué plazas funcionan y dónde crecer.</p></div></div><div class="metrics"><article><span>Ocupación media</span><strong>61%</strong><small>+8 p.p. vs. mes anterior</small></article><article><span>Ingreso / plaza</span><strong>76,75 €</strong><small>Promedio mensual</small></article><article><span>Conversión</span><strong>18,4%</strong><small>Visita → reserva</small></article><article><span>Propietarios activos</span><strong>19</strong><small>De 23 invitados</small></article></div></section>
-<section id="promo" class="view"><div class="toolbar"><div><h2>Promoción</h2><p>Haz visible tu colaboración sin diseñar nada.</p></div></div><div class="promo-grid"><article class="promo-card"><span class="promo-icon">QR</span><h3>QR para escaparate</h3><p>Un código directo a tus plazas publicadas.</p><button class="soft" id="demoDownload">Preparar cartel</button></article><article class="promo-card"><span class="promo-icon">WEB</span><h3>Banner para tu web</h3><p>“Encuentra parking con nosotros” listo para insertar.</p><button class="soft" id="copyBanner">Copiar texto</button></article><article class="promo-card"><span class="promo-icon">LINK</span><h3>Enlace de recomendación</h3><p>Comparte tus plazas o, si eres Partner, atribuye las altas y reservas a tu cuenta.</p><button class="soft" id="copyPromo">Copiar enlace</button></article></div></section>
-</main></div>
-<div class="modal-backdrop" id="modalBackdrop" hidden><div class="modal" role="dialog" aria-modal="true"><button class="modal-close" id="closeModal">×</button><div id="modalContent"></div></div></div>
+<div class="manage-app">
+  <header class="manage-header">
+    <a class="brand" href="/">
+      <span class="brand-mark"><svg viewBox="0 0 40 44"><path d="M20 2.8 35 9.3v11.1c0 10.2-6.3 18.3-15 22.2C11.3 38.7 5 30.6 5 20.4V9.3L20 2.8Z"/><path d="M15.2 30.7V13.5h6.3c4.1 0 6.8 2.4 6.8 5.9 0 3.6-2.7 6-6.8 6h-6.3"/></svg></span>
+      <span><strong>App Parking</strong><small>Área de gestión</small></span>
+    </a>
+    <div class="account-mode" role="tablist" aria-label="Tipo de cuenta">
+      <button class="mode-btn active" data-mode="owner">Particular</button>
+      <button class="mode-btn" data-mode="pro">Profesional</button>
+    </div>
+    <div class="header-right">
+      <a href="/" class="go-search">Buscar parking</a>
+      <button class="profile-button"><span>PA</span><i></i></button>
+    </div>
+  </header>
+
+  <div class="manage-shell">
+    <aside class="side-nav">
+      <nav>
+        <button class="nav-item active" data-view="home"><span>⌂</span><b>Inicio</b></button>
+        <button class="nav-item" data-view="spaces"><span>▣</span><b>Plazas</b></button>
+        <button class="nav-item pro-only" data-view="owners"><span>◎</span><b>Propietarios</b></button>
+        <button class="nav-item" data-view="bookings"><span>↔</span><b>Reservas</b></button>
+        <button class="nav-item" data-view="performance"><span>↗</span><b>Rendimiento</b></button>
+        <button class="nav-item pro-only" data-view="promo"><span>✦</span><b>Promoción</b></button>
+      </nav>
+      <div class="side-footer">
+        <span class="mini-avatar">PA</span>
+        <div><b id="accountLabel">Pau</b><small id="accountType">Propietario verificado</small></div>
+      </div>
+    </aside>
+
+    <main class="manage-main">
+      <section id="view-home" class="view active">
+        <div class="dashboard-head">
+          <div><span class="eyebrow" id="homeEyebrow">Tu plaza hoy</span><h1 id="homeTitle">Todo bajo control.</h1><p id="homeSubtitle">Tu plaza se ofrece solo cuando tú has decidido que estará libre.</p></div>
+          <div class="head-actions">
+            <button class="secondary" id="shareButton">Compartir</button>
+            <button class="primary" data-open="space">+ Añadir plaza</button>
+          </div>
+        </div>
+
+        <div class="owner-home" id="ownerHome">
+          <section class="availability-card">
+            <div class="availability-copy">
+              <span class="status-badge"><i></i> Disponible ahora</span>
+              <h2>Hasta las 17:15</h2>
+              <p>Return Shield bloqueará nuevas reservas 45 min antes de tu regreso.</p>
+              <div class="availability-actions">
+                <button class="primary" id="releaseNow">He salido · liberar plaza</button>
+                <button class="secondary" id="needEarlier">La necesito antes</button>
+              </div>
+            </div>
+            <div class="shield-visual">
+              <span class="shield-ring"><b>45</b><small>min</small></span>
+              <p>Margen de regreso</p>
+            </div>
+          </section>
+
+          <div class="owner-metrics">
+            <article><span>Ingresos este mes</span><strong>184,20 €</strong><small>+22% vs. septiembre</small></article>
+            <article><span>Horas reservadas</span><strong>126 h</strong><small>14 reservas</small></article>
+            <article><span>Ocupación disponible</span><strong>61%</strong><small>Sobre horas publicadas</small></article>
+          </div>
+
+          <div class="owner-grid">
+            <section class="panel schedule-panel">
+              <div class="panel-head"><div><span class="eyebrow">Rutina semanal</span><h3>Disponibilidad automática</h3></div><button class="text-button">Editar</button></div>
+              <div id="scheduleList" class="schedule-list"></div>
+            </section>
+            <section class="panel next-booking">
+              <span class="eyebrow">Próxima reserva</span>
+              <div class="booking-photo"><img src="/static/media/garage-ramp.jpg" alt=""></div>
+              <h3>Hoy · 12:30–15:45</h3>
+              <p>Reserva #AP-2041 · matrícula 4821 MZX</p>
+              <div class="booking-trust"><span>✓</span><div><b>Conductor verificado</b><small>Identidad · permiso · matrícula</small></div></div>
+              <button class="secondary full">Ver reserva</button>
+            </section>
+          </div>
+        </div>
+
+        <div class="pro-home" id="proHome" hidden>
+          <section class="portfolio-hero">
+            <div><span class="status-badge"><i></i> 24 plazas activas</span><h2>Tu cartera está generando movimiento.</h2><p>19 propietarios activos · 386 horas reservadas en los últimos 30 días.</p></div>
+            <div class="portfolio-value"><span>Ingresos generados</span><strong>1.842 €</strong><small>Este mes</small></div>
+          </section>
+          <div class="owner-metrics">
+            <article><span>Plazas activas</span><strong>24</strong><small>+6 este mes</small></article>
+            <article><span>Propietarios activos</span><strong>19</strong><small>De 23 invitados</small></article>
+            <article><span>Ingreso estimado partner</span><strong>276 €</strong><small>Hipótesis demo</small></article>
+          </div>
+          <div class="pro-grid">
+            <section class="panel">
+              <div class="panel-head"><div><span class="eyebrow">Activación</span><h3>Siguientes pasos</h3></div><span class="count-pill">2/4</span></div>
+              <div class="task-list">
+                <button class="task done"><i>✓</i><span><b>Datos de la cuenta</b><small>Completado</small></span></button>
+                <button class="task done"><i>✓</i><span><b>Identidad y contacto</b><small>Completado</small></span></button>
+                <button class="task" data-open="import"><i>3</i><span><b>Añade plazas</b><small>Manual o CSV</small></span><em>→</em></button>
+                <button class="task" data-open="owner"><i>4</i><span><b>Invita propietarios</b><small>Ellos completan sus datos</small></span><em>→</em></button>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><span class="eyebrow">Actividad</span><h3>Hoy</h3></div><button class="text-button">Ver todo</button></div>
+              <div class="activity-list">
+                <div><i class="green"></i><span><b>Reserva confirmada</b><small>C/ Aragó 182 · 09:00–14:00</small></span><strong>+14,50 €</strong></div>
+                <div><i class="blue"></i><span><b>Nueva plaza publicada</b><small>Laura G. aceptó la invitación</small></span><strong>Ahora</strong></div>
+                <div><i class="amber"></i><span><b>Falta un dato</b><small>BCN-018 necesita altura máxima</small></span><strong>Revisar</strong></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-spaces" class="view">
+        <div class="section-head"><div><span class="eyebrow">Inventario</span><h1>Tus plazas</h1><p>Disponibilidad, precio y seguridad en un solo sitio.</p></div><div><button class="secondary pro-only" data-open="import">Importar CSV</button><button class="primary" data-open="space">+ Nueva plaza</button></div></div>
+        <div id="spaceCards" class="space-manage-grid"></div>
+      </section>
+
+      <section id="view-owners" class="view">
+        <div class="section-head"><div><span class="eyebrow">Red de propietarios</span><h1>Propietarios</h1><p>Invita, acompaña y activa nuevas plazas.</p></div><button class="primary" data-open="owner">+ Invitar propietario</button></div>
+        <div id="ownerCards" class="people-grid"></div>
+      </section>
+
+      <section id="view-bookings" class="view">
+        <div class="section-head"><div><span class="eyebrow">Actividad</span><h1>Reservas</h1><p>Futuras, activas y completadas.</p></div></div>
+        <div id="managementBookings" class="reservation-stack"></div>
+      </section>
+
+      <section id="view-performance" class="view">
+        <div class="section-head"><div><span class="eyebrow">Rendimiento</span><h1>Qué está funcionando</h1><p>Menos ruido, más decisiones útiles.</p></div></div>
+        <div class="performance-grid">
+          <article><span>Ocupación</span><strong>61%</strong><small>+8 p.p.</small></article>
+          <article><span>Ingreso / plaza</span><strong>76,75 €</strong><small>Promedio mensual</small></article>
+          <article><span>Reserva sin incidencia</span><strong>97,4%</strong><small>Últimos 30 días</small></article>
+          <article class="wide"><span>Horas reservadas</span><div class="bars"><i style="height:28%"></i><i style="height:46%"></i><i style="height:39%"></i><i style="height:68%"></i><i style="height:82%"></i><i style="height:72%"></i><i style="height:91%"></i></div><small>Lun → Dom</small></article>
+        </div>
+      </section>
+
+      <section id="view-promo" class="view">
+        <div class="section-head"><div><span class="eyebrow">Promoción</span><h1>Haz visible tu oferta</h1><p>Material preparado para compartir sin diseñar nada.</p></div></div>
+        <div class="promo-grid">
+          <article><span class="promo-tag">QR</span><h3>Escaparate o mostrador</h3><p>QR directo a tus plazas publicadas.</p><button class="secondary">Preparar cartel</button></article>
+          <article><span class="promo-tag">WEB</span><h3>Banner para tu web</h3><p>Texto y llamada a la acción listos para insertar.</p><button class="secondary" id="copyBanner">Copiar texto</button></article>
+          <article><span class="promo-tag">LINK</span><h3>Enlace de recomendación</h3><p>Atribuye altas y reservas a tu cuenta profesional.</p><button class="secondary" id="copyPromo">Copiar enlace</button></article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-manage-nav">
+    <button class="active" data-view="home"><span>⌂</span>Inicio</button>
+    <button data-view="spaces"><span>▣</span>Plazas</button>
+    <button data-view="bookings"><span>↔</span>Reservas</button>
+    <button data-view="performance"><span>↗</span>Datos</button>
+  </nav>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <section class="modal">
+    <button class="modal-close" id="closeModal">×</button>
+    <div id="modalContent"></div>
+  </section>
+</div>
 <div class="toast" id="toast"></div>
 <script src="/static/gestion.js"></script>
-</body></html>
+</body>
+</html>
