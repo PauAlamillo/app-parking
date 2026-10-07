@@ -51,26 +51,33 @@ El ZIP/directorio original ya no aparece físicamente en el VPS tras búsquedas 
 ## Qué se ha recuperado ya
 A fecha de esta revisión:
 - ampliar una reserva +1 hora;
-- validación contra una reserva posterior antes de ampliar;
+- validación contra reservas posteriores y contra disponibilidad;
 - recálculo del total y tarifa demo;
 - cancelar una reserva aún no iniciada;
-- acciones visibles desde “Reservas”.
+- disponibilidad semanal persistida en SQLite;
+- Return Shield configurable por plaza;
+- búsqueda del conductor filtrada por horario real;
+- reservas rechazadas fuera del horario efectivo;
+- excepciones de calendario por fecha;
+- “He salido · liberar plaza” como override persistente;
+- “La necesito antes” como bloqueo persistente;
+- protección para impedir que el propietario pise una reserva confirmada;
+- último override manual prevalece sobre uno anterior solapado;
+- Área de gestión conectada al horario real del propietario.
 
 ## Qué debe recuperarse después
 
 ### Prioridad alta
-1. disponibilidad semanal persistida en backend;
-2. excepciones/calendario real;
-3. Return Shield calculado por plaza;
-4. “He salido · liberar plaza” persistente;
-5. “La necesito antes” para cerrar disponibilidad;
-6. panel de propietario alimentado por datos reales.
+1. alta/edición de plazas completamente persistente;
+2. panel de reservas del propietario alimentado por datos reales;
+3. métricas reales de ingresos, horas y ocupación;
+4. calendario visual mensual sobre el motor de disponibilidad ya implementado.
 
 ### Prioridad media
-7. ampliación con selector de nueva hora, no solo +1 h;
-8. política real de cancelación;
-9. estado de acceso compatible con apertura remota;
-10. botón “Abrir garaje” solo cuando exista integración real o acceso controlado compatible.
+5. ampliación con selector de nueva hora, no solo +1 h;
+6. política real de cancelación;
+7. estado de acceso compatible con apertura remota;
+8. botón “Abrir garaje” solo cuando exista integración real o acceso controlado compatible.
 
 ## Regla
 No recuperar estética ni arquitectura técnica antigua por nostalgia.
