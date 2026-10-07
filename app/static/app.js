@@ -255,10 +255,13 @@ function renderBookings(){
       </div>
       <div class="booking-actions">
         <button class="solid-btn" data-access="${b.id}">Ver acceso</button>
-        ${b.status==="confirmed"?`<button class="soft-btn" data-checkin="${b.id}">He llegado</button>`:b.status==="active"?`<button class="soft-btn" data-checkout="${b.id}">He salido</button>`:""}
+        ${b.status==="confirmed"||b.status==="active"?`<button class="soft-btn" data-extend="${b.id}" data-end="${b.end_at}">+ 1 hora</button>`:""}
+        ${b.status==="confirmed"?`<button class="soft-btn" data-checkin="${b.id}">He llegado</button><button class="soft-btn danger-soft" data-cancel="${b.id}">Cancelar</button>`:b.status==="active"?`<button class="soft-btn" data-checkout="${b.id}">He salido</button>`:""}
       </div>
     </article>`).join("");
   $$("[data-access]").forEach(x=>x.addEventListener("click",()=>loadAccess(+x.dataset.access)));
+  $$("[data-extend]").forEach(x=>x.addEventListener("click",()=>extendBooking(+x.dataset.extend,x.dataset.end)));
+  $$("[data-cancel]").forEach(x=>x.addEventListener("click",()=>cancelBooking(+x.dataset.cancel)));
   $$("[data-checkin]").forEach(x=>x.addEventListener("click",()=>bookingAction(+x.dataset.checkin,"checkin")));
   $$("[data-checkout]").forEach(x=>x.addEventListener("click",()=>bookingAction(+x.dataset.checkout,"checkout")));
 }
@@ -272,6 +275,22 @@ async function loadAccess(id){
 }
 async function bookingAction(id,action){
   try{await api("/api/bookings/"+id+"/"+action,{method:"POST",body:"{}"});toast(action==="checkin"?"Entrada registrada":"Salida registrada");await loadBookings()}catch(e){toast(e.message)}
+}
+async function extendBooking(id,currentEnd){
+  const next=new Date(new Date(currentEnd).getTime()+3600000);
+  try{
+    await api("/api/bookings/"+id+"/extend",{method:"POST",body:JSON.stringify({end_at:next.toISOString()})});
+    toast("Reserva ampliada 1 hora");
+    await loadBookings();
+  }catch(e){toast(e.message)}
+}
+async function cancelBooking(id){
+  if(!window.confirm("¿Cancelar esta reserva?"))return;
+  try{
+    await api("/api/bookings/"+id+"/cancel",{method:"POST",body:"{}"});
+    toast("Reserva cancelada");
+    await loadBookings();
+  }catch(e){toast(e.message)}
 }
 
 function renderFavorites(){
