@@ -1,5 +1,5 @@
 # Estado actual — App Parquing staging
-Fecha: 2026-10-07
+Fecha: 2026-10-08
 
 ## Funciona
 - backend FastAPI + SQLite
@@ -21,7 +21,15 @@ Fecha: 2026-10-07
 - ocultación de instrucciones privadas antes de reservar
 - bloqueo de acceso sensible hasta 30 minutos antes
 - backend rechaza garajes B/C si falta identidad, permiso o matrícula
-- panel Partner accesible en /partner
+- Área de gestión accesible en /gestion (compatibilidad temporal /partner)
+- disponibilidad semanal real y persistente
+- Return Shield configurable y aplicado por backend
+- excepciones de calendario
+- liberar plaza manualmente
+- bloquear disponibilidad anticipadamente
+- búsqueda filtrada por disponibilidad real
+- ampliar/cancelar reserva desde la app
+- protección contra cambios del propietario que pisen reservas confirmadas
 - watchdog local del backend
 - túnel temporal de demostración
 
@@ -56,9 +64,9 @@ Nunca tratar estas plazas como inventario real.
 - mensajería
 - sistema de incidencias
 - contratos / términos finales
-- panel Partner conectado completamente al backend
+- completar CRUD real de plazas/propietarios en Área de gestión
 - importación CSV persistente
-- disponibilidad/calendario por plaza
+- calendario visual mensual sobre el motor de disponibilidad
 - motor de precios
 - notificaciones
 - despliegue estable con dominio propio
