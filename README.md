@@ -39,6 +39,7 @@ Por eso no existe un “panel inmobiliaria” como producto separado: existe una
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
+sh ops/fetch-demo-media.sh
 cd app
 python3 -m uvicorn server:app --host 127.0.0.1 --port 18971
 ```
