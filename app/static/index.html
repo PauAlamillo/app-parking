@@ -3,135 +3,188 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b1514">
-<title>App Parquing</title>
+<meta name="theme-color" content="#0b1210">
+<title>App Parking</title>
 <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
 <link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-<div class="app-shell">
-  <header class="topbar">
-    <a class="brand" href="#" data-route="explore" aria-label="App Parquing">
-      <span class="brand-shield" aria-hidden="true"><svg viewBox="0 0 32 36"><path d="M16 2 28 7v9c0 8.2-5.1 14.7-12 18C9.1 30.7 4 24.2 4 16V7L16 2Z"/><path class="p-stroke" d="M12 25V10h5.2c3.4 0 5.8 2 5.8 5s-2.4 5-5.8 5H12"/></svg></span>
-      <span><strong>App Parquing</strong><small>parking privado, con confianza</small></span>
+<div class="app">
+  <header class="app-header">
+    <a class="brand" href="#" data-route="explore" aria-label="App Parking">
+      <span class="brand-mark">
+        <svg viewBox="0 0 40 44" aria-hidden="true">
+          <path d="M20 2.8 35 9.3v11.1c0 10.2-6.3 18.3-15 22.2C11.3 38.7 5 30.6 5 20.4V9.3L20 2.8Z"/>
+          <path d="M15.2 30.7V13.5h6.3c4.1 0 6.8 2.4 6.8 5.9 0 3.6-2.7 6-6.8 6h-6.3"/>
+        </svg>
+      </span>
+      <span class="brand-copy"><strong>App Parking</strong><small>parking privado con confianza</small></span>
     </a>
-    <nav class="desktop-nav" aria-label="Principal">
-      <button class="nav-link active" data-route="explore">Explorar</button>
-      <button class="nav-link" data-route="bookings">Reservas</button>
-      <button class="nav-link" data-route="favorites">Guardados</button>
+
+    <nav class="header-nav">
+      <button class="header-link active" data-route="explore">Buscar</button>
+      <button class="header-link" data-route="bookings">Reservas</button>
+      <button class="header-link" data-route="favorites">Guardados</button>
     </nav>
-    <button class="profile-chip" data-route="profile"><span class="avatar">P</span><span class="profile-copy"><b id="topUser">Pau</b><small><i class="verified-dot"></i> Verificado</small></span></button>
+
+    <div class="header-actions">
+      <a class="manage-link" href="/gestion">Gestionar una plaza</a>
+      <button class="account-button" data-route="profile" aria-label="Perfil"><span>P</span><i></i></button>
+    </div>
   </header>
 
   <main>
     <section id="route-explore" class="route active">
-      <div class="search-strip">
-        <div class="search-copy">
-          <span class="section-kicker">Aparca con tranquilidad</span>
-          <h1>Tu sitio, antes de llegar.</h1>
-          <p>Plazas privadas verificadas. Sabes cómo entras, dónde aparcas y qué nivel de seguridad tiene cada garaje.</p>
-        </div>
-        <div class="search-card">
-          <label class="search-field location-field"><span>Destino</span><input id="cityInput" list="cityList" value="Barcelona" placeholder="Ciudad o zona"><datalist id="cityList"><option>Barcelona</option><option>Madrid</option><option>Valencia</option><option>Sevilla</option><option>Bilbao</option><option>Málaga</option><option>Zaragoza</option></datalist></label>
-          <label class="search-field"><span>Entrada</span><input id="startInput" type="datetime-local"></label>
-          <label class="search-field"><span>Salida</span><input id="endInput" type="datetime-local"></label>
-          <button class="search-button" id="searchButton" aria-label="Buscar plazas"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg><span>Buscar</span></button>
-        </div>
-      </div>
-
-      <div class="filter-row" id="filters">
-        <button class="filter active" data-filter="security">🛡 Seguridad primero</button>
-        <button class="filter" data-filter="gated">Puerta cerrada</button>
-        <button class="filter" data-filter="cctv">CCTV declarado</button>
-        <button class="filter" data-filter="ev">Carga eléctrica</button>
-        <button class="filter" data-filter="price">≤ 2 €/h</button>
-        <button class="filter filter-more" id="moreFilters">Filtros <span>2</span></button>
-      </div>
-
-      <section class="market-layout">
-        <div class="results-pane">
-          <div class="results-head">
-            <div><h2 id="resultsTitle">Parking seguro en Barcelona</h2><p id="resultsMeta">Cargando plazas verificadas…</p></div>
-            <label class="sort-label">Ordenar<select id="sortSelect"><option value="security">Más seguras</option><option value="distance">Más cerca</option><option value="price">Más baratas</option><option value="rating">Mejor valoradas</option></select></label>
+      <div class="search-stage">
+        <div class="search-stage-inner">
+          <div class="search-intro">
+            <span class="eyebrow">Aparca sin improvisar</span>
+            <h1>Encuentra una plaza privada<br>antes de llegar.</h1>
+            <p>Compara acceso, seguridad y precio antes de reservar.</p>
           </div>
-          <div class="trust-banner"><span class="trust-icon">✓</span><div><b>La seguridad no es un extra.</b><p>En garajes comunitarios priorizamos identidad, matrícula y acceso trazable. Las credenciales sensibles nunca se muestran antes de reservar.</p></div><button id="securityInfo">Cómo funciona</button></div>
-          <div id="spacesList" class="spaces-list"></div>
+
+          <div class="search-panel">
+            <label class="search-item search-destination">
+              <span>Destino</span>
+              <div><svg viewBox="0 0 24 24"><path d="M12 21s6-5 6-11a6 6 0 1 0-12 0c0 6 6 11 6 11Z"/><circle cx="12" cy="10" r="2"/></svg><input id="cityInput" list="cityList" value="Barcelona" placeholder="Ciudad o zona"></div>
+              <datalist id="cityList"><option>Barcelona</option><option>Madrid</option><option>Valencia</option><option>Sevilla</option><option>Bilbao</option><option>Málaga</option><option>Zaragoza</option></datalist>
+            </label>
+            <label class="search-item"><span>Entrada</span><input id="startInput" type="datetime-local"></label>
+            <label class="search-item"><span>Salida</span><input id="endInput" type="datetime-local"></label>
+            <button class="search-submit" id="searchButton">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg><span>Buscar</span>
+            </button>
+          </div>
+
+          <div class="trust-strip">
+            <span><i class="trust-dot"></i> Identidad y matrícula verificadas en garajes comunitarios</span>
+            <button id="securityInfo">Cómo protegemos cada reserva</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="results-shell">
+        <div class="results-toolbar">
+          <div>
+            <span class="eyebrow">Resultados</span>
+            <h2 id="resultsTitle">Plazas en Barcelona</h2>
+            <p id="resultsMeta">Cargando plazas…</p>
+          </div>
+          <div class="view-controls">
+            <button class="view-toggle active" data-result-view="list">Lista</button>
+            <button class="view-toggle" data-result-view="map">Mapa</button>
+            <label class="sort-control">Ordenar
+              <select id="sortSelect">
+                <option value="security">Más seguras</option>
+                <option value="distance">Más cerca</option>
+                <option value="price">Más baratas</option>
+                <option value="rating">Mejor valoradas</option>
+              </select>
+            </label>
+          </div>
         </div>
 
-        <aside class="map-pane" aria-label="Mapa de plazas">
-          <div class="map-toolbar"><span><i></i> Zona aproximada</span><button id="recenterBtn">Centrar</button></div>
-          <div class="map-canvas" id="mapCanvas">
-            <svg class="city-map" viewBox="0 0 800 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-              <rect width="800" height="720" class="map-base"/>
-              <path class="river" d="M-40 570 C150 500 250 650 430 590 C610 530 690 610 860 510"/>
-              <path class="major-road" d="M-20 190 C180 225 260 170 420 210 S650 240 830 145"/>
-              <path class="major-road" d="M140 -30 C175 150 140 300 210 430 S300 600 330 760"/>
-              <path class="major-road" d="M620 -30 C590 140 640 260 570 410 S520 600 570 760"/>
-              <path class="road" d="M0 330 C160 300 250 345 400 320 S650 275 820 320"/>
-              <path class="road" d="M20 460 C190 420 280 470 430 450 S620 410 790 450"/>
-              <path class="road" d="M290 -10 C310 150 290 250 355 380 S450 570 440 760"/>
-              <path class="road" d="M470 -20 C430 150 485 260 455 370 S390 580 420 750"/>
-              <path class="minor-road" d="M65 90 710 620M710 80 110 620M40 260 760 540M80 610 730 250"/>
-              <rect class="park" x="85" y="115" width="120" height="74" rx="18"/>
-              <rect class="park" x="560" y="480" width="135" height="85" rx="20"/>
-              <text class="map-label" x="108" y="155">Parc</text>
-              <text class="map-label" x="585" y="525">Jardins</text>
+        <div class="filter-bar" id="filters">
+          <button class="filter-pill active" data-filter="security"><span>✓</span> Seguridad verificada</button>
+          <button class="filter-pill" data-filter="gated">Puerta cerrada</button>
+          <button class="filter-pill" data-filter="cctv">CCTV</button>
+          <button class="filter-pill" data-filter="ev">Carga EV</button>
+          <button class="filter-pill" data-filter="price">Hasta 2 €/h</button>
+        </div>
+
+        <div class="results-grid-view active" id="listView">
+          <div class="spaces-grid" id="spacesList"></div>
+        </div>
+
+        <div class="results-map-view" id="mapView">
+          <div class="map-shell">
+            <div class="map-topbar">
+              <span><i></i> Ubicación aproximada antes de reservar</span>
+              <button id="recenterBtn">Centrar</button>
+            </div>
+            <svg class="map-svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <rect width="1200" height="700" class="map-bg"/>
+              <g class="city-blocks">
+                <rect x="30" y="30" width="220" height="150" rx="14"/><rect x="285" y="30" width="180" height="150" rx="14"/><rect x="500" y="30" width="255" height="150" rx="14"/><rect x="790" y="30" width="160" height="150" rx="14"/><rect x="985" y="30" width="185" height="150" rx="14"/>
+                <rect x="30" y="220" width="180" height="160" rx="14"/><rect x="245" y="220" width="230" height="160" rx="14"/><rect x="510" y="220" width="180" height="160" rx="14"/><rect x="725" y="220" width="260" height="160" rx="14"/><rect x="1020" y="220" width="150" height="160" rx="14"/>
+                <rect x="30" y="420" width="260" height="210" rx="14"/><rect x="325" y="420" width="150" height="210" rx="14"/><rect x="510" y="420" width="260" height="210" rx="14"/><rect x="805" y="420" width="145" height="210" rx="14"/><rect x="985" y="420" width="185" height="210" rx="14"/>
+              </g>
+              <path class="map-road major" d="M0 200 H1200M0 400 H1200M270 0 V700M490 0 V700M780 0 V700M970 0 V700"/>
+              <path class="map-road minor" d="M0 105 H1200M0 530 H1200M115 0 V700M615 0 V700M1080 0 V700"/>
+              <path class="map-route" d="M190 575 C330 500 350 310 565 325 C770 340 820 165 1035 140"/>
             </svg>
             <div id="mapPins" class="map-pins"></div>
-            <div class="map-legend"><span><i class="legend-shield">✓</i> Seguridad verificada</span><span>Precios demo</span></div>
+            <div class="map-watermark">Vista orientativa · sin dirección exacta</div>
           </div>
-        </aside>
-      </section>
+        </div>
+      </div>
     </section>
 
     <section id="route-bookings" class="route page-route">
-      <div class="page-head"><div><span class="section-kicker">Tus movimientos</span><h1>Reservas</h1><p>Todo lo que necesitas para entrar, aparcar y salir sin sorpresas.</p></div><button class="outline-btn" data-route="explore">Buscar otra plaza</button></div>
+      <div class="page-header">
+        <div><span class="eyebrow">Tus movimientos</span><h1>Reservas</h1><p>Acceso, horarios y estado de cada estancia.</p></div>
+        <button class="secondary-button" data-route="explore">Buscar otra plaza</button>
+      </div>
       <div id="bookingsList" class="booking-list"></div>
     </section>
 
     <section id="route-favorites" class="route page-route">
-      <div class="page-head"><div><span class="section-kicker">Para volver rápido</span><h1>Guardados</h1><p>Tus plazas favoritas, con seguridad y precio siempre visibles.</p></div></div>
-      <div id="favoritesList" class="favorites-grid"></div>
+      <div class="page-header"><div><span class="eyebrow">Tus favoritas</span><h1>Guardados</h1><p>Plazas que quieres tener a mano para la próxima vez.</p></div></div>
+      <div id="favoritesList" class="spaces-grid"></div>
     </section>
 
     <section id="route-profile" class="route page-route">
-      <div class="page-head"><div><span class="section-kicker">Tu identidad protege la comunidad</span><h1>Perfil y confianza</h1><p>Cuanto mejor verificado estés, más garajes seguros podrás reservar.</p></div></div>
-      <div class="profile-grid">
-        <article class="profile-card identity-card"><div class="big-avatar">P</div><div><h2 id="profileName">Pau Demo</h2><p id="profileEmail">—</p><div class="trust-score"><span>Índice de confianza</span><strong id="trustScore">—</strong></div></div></article>
-        <article class="profile-card"><h3>Verificación</h3><div class="check-list"><div><span>✓</span><p><b>Identidad</b><small>Documento verificado</small></p></div><div><span>✓</span><p><b>Permiso de conducir</b><small>Válido</small></p></div><div><span>✓</span><p><b>Teléfono</b><small>Verificado</small></p></div></div></article>
-        <article class="profile-card"><h3>Tu vehículo</h3><div class="vehicle-plate" id="vehiclePlate">—</div><p id="vehicleModel">—</p><small>La matrícula queda vinculada a cada reserva para proteger al propietario y al resto de vecinos.</small></article>
-        <article class="profile-card safety-card"><div class="mini-shield">✓</div><h3>Por qué pedimos más</h3><p>Un garaje comunitario da acceso a un espacio compartido. Identificar conductor y vehículo reduce el anonimato y mejora la trazabilidad ante cualquier incidencia.</p><button class="text-button" id="profileSecurityInfo">Ver modelo de seguridad</button></article>
+      <div class="page-header"><div><span class="eyebrow">Confianza de la cuenta</span><h1>Tu perfil</h1><p>Tu identidad protege a propietarios, vecinos y conductores.</p></div></div>
+      <div class="profile-layout">
+        <article class="identity-card">
+          <div class="identity-top">
+            <div class="profile-avatar">P</div>
+            <div><h2 id="profileName">Pau Demo</h2><p id="profileEmail">—</p></div>
+            <div class="profile-status"><span>Cuenta verificada</span><strong id="trustScore">—</strong></div>
+          </div>
+          <div class="verification-row">
+            <div><span>✓</span><p><b>Identidad</b><small>Verificada</small></p></div>
+            <div><span>✓</span><p><b>Permiso</b><small>Verificado</small></p></div>
+            <div><span>✓</span><p><b>Teléfono</b><small>Verificado</small></p></div>
+          </div>
+        </article>
+        <article class="vehicle-card">
+          <span class="eyebrow">Vehículo principal</span>
+          <div class="plate" id="vehiclePlate">—</div>
+          <h3 id="vehicleModel">—</h3>
+          <p>La matrícula queda asociada a cada reserva para mantener trazabilidad de acceso.</p>
+        </article>
+        <article class="why-card">
+          <span class="why-icon">✓</span>
+          <div><h3>La seguridad empieza por saber quién entra.</h3><p>En garajes comunitarios pedimos más información porque el acceso afecta a terceros. No mostramos credenciales sensibles antes de tiempo.</p><button id="profileSecurityInfo">Ver cómo funciona</button></div>
+        </article>
       </div>
     </section>
   </main>
 
-  <nav class="mobile-nav" aria-label="Navegación móvil">
-    <button class="active" data-route="explore"><span>⌂</span>Explorar</button>
+  <nav class="mobile-nav">
+    <button class="active" data-route="explore"><span>⌕</span>Buscar</button>
     <button data-route="bookings"><span>▣</span>Reservas</button>
     <button data-route="favorites"><span>♡</span>Guardados</button>
     <button data-route="profile"><span>◎</span>Perfil</button>
   </nav>
 </div>
 
-<div id="detailSheet" class="sheet-backdrop" hidden>
-  <article class="detail-sheet" id="detailContent"></article>
-</div>
-<div id="bookingModal" class="modal-backdrop" hidden>
-  <section class="booking-modal" id="bookingContent"></section>
-</div>
+<div id="detailSheet" class="sheet-backdrop" hidden><article class="detail-sheet" id="detailContent"></article></div>
+<div id="bookingModal" class="modal-backdrop" hidden><section class="booking-modal" id="bookingContent"></section></div>
 <div id="infoModal" class="modal-backdrop" hidden>
   <section class="info-modal">
     <button class="modal-close" data-close="info">×</button>
-    <span class="section-kicker">Seguridad por diseño</span>
-    <h2>Sabemos quién entra, con qué coche y durante cuánto tiempo.</h2>
-    <div class="security-flow">
-      <div><span>1</span><b>Identidad</b><p>Garajes comunitarios requieren usuario y permiso verificados.</p></div>
-      <div><span>2</span><b>Vehículo</b><p>La matrícula queda asociada a la reserva concreta.</p></div>
-      <div><span>3</span><b>Acceso limitado</b><p>Dirección e instrucciones sensibles se revelan solo cuando toca.</p></div>
-      <div><span>4</span><b>Trazabilidad</b><p>Check-in, check-out e incidencias quedan ligados a la reserva.</p></div>
+    <span class="eyebrow">Protección App Parking</span>
+    <h2>No vendemos una plaza. Vendemos una reserva trazable.</h2>
+    <div class="security-steps">
+      <article><span>01</span><h3>Sabemos quién entra</h3><p>Garajes comunitarios requieren identidad, permiso y vehículo vinculados a la reserva.</p></article>
+      <article><span>02</span><h3>Mostramos lo justo</h3><p>Dirección e instrucciones sensibles se mantienen ocultas hasta que existe una reserva válida.</p></article>
+      <article><span>03</span><h3>Registramos la estancia</h3><p>Entrada, salida, matrícula e incidencias quedan asociadas a la reserva.</p></article>
+      <article><span>04</span><h3>Limitamos el acceso</h3><p>Preferimos accesos temporales o asistidos frente a códigos permanentes compartidos.</p></article>
     </div>
-    <p class="info-note">La seguridad absoluta no existe. App Parquing reduce el anonimato y limita el acceso siguiendo un principio de mínimo privilegio.</p>
+    <p class="security-disclaimer">Ningún sistema elimina el riesgo al 100%. Nuestro objetivo es reducir anonimato, limitar privilegios y mantener trazabilidad.</p>
   </section>
 </div>
 <div id="toast" class="toast" role="status"></div>
