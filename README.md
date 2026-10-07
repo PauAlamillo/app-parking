@@ -15,6 +15,10 @@ Por eso no existe un “panel inmobiliaria” como producto separado: existe una
 - búsqueda y filtros demo;
 - favoritos persistentes;
 - reservas y prevención de solapes;
+- disponibilidad semanal persistente;
+- Return Shield aplicado en búsqueda y reservas;
+- excepciones de calendario y overrides manuales;
+- liberar o recuperar la plaza desde el Área de gestión;
 - check-in / check-out;
 - acceso sensible protegido;
 - perfil de identidad/vehículo;
