@@ -216,7 +216,7 @@ a{text-decoration:none;color:inherit}
 .booking-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .booking-meta span{background:#f2f4f2;border-radius:7px;padding:6px 7px;font-size:9px;font-weight:750;color:#58645f}
 .booking-actions{display:flex;flex-direction:column;justify-content:center;gap:7px;min-width:145px}
-.solid-btn,.soft-btn{border:0;border-radius:10px;padding:9px 12px;font-size:10px;font-weight:820}.solid-btn{background:var(--forest);color:#fff}.soft-btn{background:#edf5f1;color:var(--forest)}
+.solid-btn,.soft-btn{border:0;border-radius:10px;padding:9px 12px;font-size:10px;font-weight:820}.solid-btn{background:var(--forest);color:#fff}.soft-btn{background:#edf5f1;color:var(--forest)}.danger-soft{background:#faeeee;color:#a8463e}
 .access-card{margin-top:12px;padding:12px;border-radius:11px;background:#0d1b17;color:#fff}.access-card.locked{background:#f0f3f1;color:var(--ink)}
 .access-card h4{margin:0 0 4px;font-size:11px}.access-card p{margin:0!important;color:inherit!important;opacity:.78;font-size:10px!important;line-height:1.5}
 .empty-state{background:#fff;border:1px dashed #cbd4cf;border-radius:var(--radius-lg);padding:58px 24px;text-align:center}
