@@ -111,6 +111,11 @@ async function loadSpaces(){
   if(state.filters.cctv)p.set("cctv","true");
   if(state.filters.ev)p.set("ev","true");
   if(state.filters.price)p.set("max_price","2");
+  const start=$("#startInput").value,end=$("#endInput").value;
+  if(start&&end){
+    p.set("start_at",new Date(start).toISOString());
+    p.set("end_at",new Date(end).toISOString());
+  }
   try{state.spaces=await api("/api/spaces?"+p.toString());renderSpaces()}catch(e){toast(e.message)}
 }
 async function toggleFavorite(id){
