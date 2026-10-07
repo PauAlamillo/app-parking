@@ -54,16 +54,16 @@
         <div class="owner-home" id="ownerHome">
           <section class="availability-card">
             <div class="availability-copy">
-              <span class="status-badge"><i></i> Disponible ahora</span>
-              <h2>Hasta las 17:15</h2>
-              <p>Return Shield bloqueará nuevas reservas 45 min antes de tu regreso.</p>
+              <span class="status-badge" id="availabilityStatusBadge"><i></i><span id="availabilityStatusText">Cargando estado…</span></span>
+              <h2 id="availabilityUntil">—</h2>
+              <p id="shieldDescription">Cargando Return Shield…</p>
               <div class="availability-actions">
                 <button class="primary" id="releaseNow">He salido · liberar plaza</button>
                 <button class="secondary" id="needEarlier">La necesito antes</button>
               </div>
             </div>
             <div class="shield-visual">
-              <span class="shield-ring"><b>45</b><small>min</small></span>
+              <span class="shield-ring"><b id="shieldMinutes">—</b><small>min</small></span>
               <p>Margen de regreso</p>
             </div>
           </section>
@@ -76,8 +76,13 @@
 
           <div class="owner-grid">
             <section class="panel schedule-panel">
-              <div class="panel-head"><div><span class="eyebrow">Rutina semanal</span><h3>Disponibilidad automática</h3></div><button class="text-button">Editar</button></div>
+              <div class="panel-head"><div><span class="eyebrow">Rutina semanal</span><h3>Disponibilidad automática</h3></div><button class="text-button" id="saveSchedule">Guardar</button></div>
               <div id="scheduleList" class="schedule-list"></div>
+              <div class="schedule-tools">
+                <label class="shield-control"><span>Return Shield</span><select id="shieldSelect"><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="90">90 min</option></select></label>
+                <button class="secondary" id="addException">+ Añadir excepción</button>
+                <div id="exceptionList" class="exception-list"></div>
+              </div>
             </section>
             <section class="panel next-booking">
               <span class="eyebrow">Próxima reserva</span>
