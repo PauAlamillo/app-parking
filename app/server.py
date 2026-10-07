@@ -6,6 +6,7 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -103,8 +104,43 @@ def init_db() -> None:
           space_id INTEGER NOT NULL,
           PRIMARY KEY(user_id, space_id)
         );
+        CREATE TABLE IF NOT EXISTS space_weekly_availability (
+          space_id INTEGER NOT NULL,
+          weekday INTEGER NOT NULL,
+          enabled INTEGER NOT NULL DEFAULT 0,
+          start_minute INTEGER NOT NULL DEFAULT 480,
+          end_minute INTEGER NOT NULL DEFAULT 1080,
+          PRIMARY KEY(space_id, weekday),
+          FOREIGN KEY(space_id) REFERENCES spaces(id)
+        );
+        CREATE TABLE IF NOT EXISTS space_availability_exceptions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          space_id INTEGER NOT NULL,
+          date TEXT NOT NULL,
+          kind TEXT NOT NULL,
+          start_minute INTEGER,
+          end_minute INTEGER,
+          note TEXT,
+          UNIQUE(space_id, date),
+          FOREIGN KEY(space_id) REFERENCES spaces(id)
+        );
+        CREATE TABLE IF NOT EXISTS space_manual_overrides (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          space_id INTEGER NOT NULL,
+          kind TEXT NOT NULL,
+          start_at TEXT NOT NULL,
+          end_at TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY(space_id) REFERENCES spaces(id)
+        );
         """
     )
+    space_columns = {row[1] for row in conn.execute("PRAGMA table_info(spaces)").fetchall()}
+    if "owner_user_id" not in space_columns:
+        conn.execute("ALTER TABLE spaces ADD COLUMN owner_user_id INTEGER")
+    if "return_shield_minutes" not in space_columns:
+        conn.execute("ALTER TABLE spaces ADD COLUMN return_shield_minutes INTEGER NOT NULL DEFAULT 45")
+    conn.execute("UPDATE spaces SET owner_user_id=1 WHERE id=1 AND owner_user_id IS NULL")
     if conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
         conn.execute(
             "INSERT INTO users VALUES (1,?,?,?,?,?,?,?,?)",
@@ -125,8 +161,26 @@ def init_db() -> None:
             (11,"Málaga","Centro","C/ Carretería 40","Centro · 4 min","Parking seguro · Centro", "Costa Urbana",2.05,14.5,42,53,280,92,4.8,76,1,1,1,0,1,1,0,1,"Código temporal",195,235,485,0,'["compacto","berlina"]',1,"B","Garaje interior con acceso controlado.","Código temporal disponible cerca del inicio.","El código deja de ser válido al cerrar la reserva.",76,1),
             (12,"Zaragoza","Centro","P.º Independencia 31","Centro · 2 min","Plaza premium · Independencia", "Aragón Fincas",2.00,14.0,53,36,120,97,4.9,134,1,1,1,1,1,1,0,1,"Conserje",210,250,520,1,'["compacto","berlina","suv"]',1,"B","Garaje central con conserje, acceso amplio y cargador.","Entrada controlada por matrícula.","Acceso peatonal independiente y personal durante la reserva.",134,1),
         ]
-        placeholders = ",".join(["?"] * len(spaces[0]))
-        conn.executemany(f"INSERT INTO spaces VALUES ({placeholders})", spaces)
+        seed_columns = [
+            "id","city","neighborhood","address","approx_address","title","partner",
+            "price_hour","price_day","map_x","map_y","distance_m","security_score",
+            "rating","reviews","gated","cctv","lighting","concierge","indoor","covered",
+            "private_box","shared_garage","access_method","max_height_cm","width_cm",
+            "length_cm","ev_charger","vehicle_sizes","verified","risk_level","description",
+            "public_access_note","private_access_note","bookings_count","active"
+        ]
+        placeholders = ",".join(["?"] * len(seed_columns))
+        conn.executemany(
+            f"INSERT INTO spaces ({','.join(seed_columns)}) VALUES ({placeholders})",
+            spaces,
+        )
+    conn.execute("UPDATE spaces SET owner_user_id=1, return_shield_minutes=45 WHERE id=1")
+    if conn.execute("SELECT COUNT(*) FROM space_weekly_availability WHERE space_id=1").fetchone()[0] == 0:
+        weekly = [(1, day, 1 if day < 5 else 0, 480, 1080) for day in range(7)]
+        conn.executemany(
+            "INSERT INTO space_weekly_availability(space_id,weekday,enabled,start_minute,end_minute) VALUES (?,?,?,?,?)",
+            weekly,
+        )
     conn.commit()
     conn.close()
 
@@ -145,7 +199,146 @@ def public_space(row: sqlite3.Row) -> dict:
     out = rowdict(row)
     out.pop("address", None)
     out.pop("private_access_note", None)
+    out.pop("owner_user_id", None)
     return out
+
+
+LOCAL_TZ = ZoneInfo("Europe/Madrid")
+
+
+def to_local(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=LOCAL_TZ)
+    return value.astimezone(LOCAL_TZ)
+
+
+def overlaps(a_start: datetime, a_end: datetime, b_start: datetime, b_end: datetime) -> bool:
+    return a_start < b_end and a_end > b_start
+
+
+def parse_dt(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=LOCAL_TZ)
+    return parsed
+
+
+def get_routine_window(conn: sqlite3.Connection, space_id: int, target_date) -> tuple[int, int] | None:
+    exception = conn.execute(
+        "SELECT * FROM space_availability_exceptions WHERE space_id=? AND date=?",
+        (space_id, target_date.isoformat()),
+    ).fetchone()
+    if exception:
+        if exception["kind"] == "unavailable":
+            return None
+        start_minute = exception["start_minute"] if exception["start_minute"] is not None else 0
+        end_minute = exception["end_minute"] if exception["end_minute"] is not None else 1440
+        apply_shield = True
+    else:
+        rows = conn.execute(
+            "SELECT * FROM space_weekly_availability WHERE space_id=?",
+            (space_id,),
+        ).fetchall()
+        if not rows:
+            return (0, 1440)
+        weekday = target_date.weekday()
+        row = next((r for r in rows if r["weekday"] == weekday), None)
+        if not row or not row["enabled"]:
+            return None
+        start_minute, end_minute = row["start_minute"], row["end_minute"]
+        apply_shield = True
+
+    if apply_shield:
+        shield_row = conn.execute(
+            "SELECT return_shield_minutes FROM spaces WHERE id=?",
+            (space_id,),
+        ).fetchone()
+        shield = int(shield_row["return_shield_minutes"] or 0) if shield_row else 0
+        end_minute = max(start_minute, end_minute - shield)
+    return (start_minute, end_minute)
+
+
+def space_is_available(
+    conn: sqlite3.Connection,
+    space_id: int,
+    start_at: datetime,
+    end_at: datetime,
+    ignore_booking_id: int | None = None,
+) -> bool:
+    if end_at <= start_at:
+        return False
+
+    start_local, end_local = to_local(start_at), to_local(end_at)
+
+    overrides = conn.execute(
+        "SELECT * FROM space_manual_overrides WHERE space_id=? ORDER BY id DESC",
+        (space_id,),
+    ).fetchall()
+    release_covers = False
+    for override in overrides:
+        o_start, o_end = parse_dt(override["start_at"]), parse_dt(override["end_at"])
+        if override["kind"] == "block" and overlaps(start_local, end_local, to_local(o_start), to_local(o_end)):
+            return False
+        if override["kind"] == "release" and to_local(o_start) <= start_local and to_local(o_end) >= end_local:
+            release_covers = True
+
+    if not release_covers:
+        cursor_date = start_local.date()
+        final_date = (end_local - timedelta(microseconds=1)).date()
+        while cursor_date <= final_date:
+            day_start = datetime.combine(cursor_date, datetime.min.time(), tzinfo=LOCAL_TZ)
+            next_day = day_start + timedelta(days=1)
+            segment_start = max(start_local, day_start)
+            segment_end = min(end_local, next_day)
+            window = get_routine_window(conn, space_id, cursor_date)
+            if not window:
+                return False
+            start_minute, end_minute = window
+            seg_start_min = (segment_start - day_start).total_seconds() / 60
+            seg_end_min = (segment_end - day_start).total_seconds() / 60
+            if seg_start_min < start_minute or seg_end_min > end_minute:
+                return False
+            cursor_date += timedelta(days=1)
+
+    bookings = conn.execute(
+        "SELECT id,start_at,end_at FROM bookings WHERE space_id=? AND status IN ('confirmed','active')",
+        (space_id,),
+    ).fetchall()
+    for booking in bookings:
+        if ignore_booking_id is not None and booking["id"] == ignore_booking_id:
+            continue
+        b_start, b_end = parse_dt(booking["start_at"]), parse_dt(booking["end_at"])
+        if overlaps(start_local, end_local, to_local(b_start), to_local(b_end)):
+            return False
+    return True
+
+
+def management_space(conn: sqlite3.Connection, space_id: int) -> sqlite3.Row:
+    row = conn.execute(
+        "SELECT * FROM spaces WHERE id=? AND owner_user_id=1",
+        (space_id,),
+    ).fetchone()
+    if not row:
+        raise HTTPException(404, "Plaza de gestión no encontrada")
+    return row
+
+
+def clear_overlapping_overrides(
+    conn: sqlite3.Connection,
+    space_id: int,
+    start_at: datetime,
+    end_at: datetime,
+) -> None:
+    rows = conn.execute(
+        "SELECT id,start_at,end_at FROM space_manual_overrides WHERE space_id=?",
+        (space_id,),
+    ).fetchall()
+    for row in rows:
+        if overlaps(
+            to_local(start_at), to_local(end_at),
+            to_local(parse_dt(row["start_at"])), to_local(parse_dt(row["end_at"])),
+        ):
+            conn.execute("DELETE FROM space_manual_overrides WHERE id=?", (row["id"],))
 
 
 class BookingCreate(BaseModel):
@@ -159,6 +352,31 @@ class FavoriteToggle(BaseModel):
 
 
 class BookingExtend(BaseModel):
+    end_at: datetime
+
+
+class WeeklyAvailabilityItem(BaseModel):
+    weekday: int = Field(ge=0, le=6)
+    enabled: bool
+    start_minute: int = Field(ge=0, le=1439)
+    end_minute: int = Field(ge=1, le=1440)
+
+
+class AvailabilityUpdate(BaseModel):
+    return_shield_minutes: int = Field(ge=0, le=180)
+    weekly: list[WeeklyAvailabilityItem]
+
+
+class AvailabilityExceptionCreate(BaseModel):
+    date: str
+    kind: str
+    start_minute: Optional[int] = Field(default=None, ge=0, le=1439)
+    end_minute: Optional[int] = Field(default=None, ge=1, le=1440)
+    note: Optional[str] = None
+
+
+class ManualOverrideCreate(BaseModel):
+    start_at: datetime
     end_at: datetime
 
 
@@ -196,6 +414,195 @@ def me():
     return data
 
 
+@app.get("/api/management/spaces")
+def management_spaces():
+    conn = db()
+    rows = conn.execute(
+        "SELECT * FROM spaces WHERE owner_user_id=1 ORDER BY id"
+    ).fetchall()
+    out = []
+    for row in rows:
+        item = rowdict(row)
+        item["private_access_note"] = None
+        now = datetime.now(LOCAL_TZ)
+        item["bookable_now"] = space_is_available(conn, row["id"], now, now + timedelta(minutes=15))
+        item["return_shield_minutes"] = int(row["return_shield_minutes"] or 0)
+        out.append(item)
+    conn.close()
+    return out
+
+
+@app.get("/api/management/spaces/{space_id}/availability")
+def get_management_availability(space_id: int):
+    conn = db()
+    space = management_space(conn, space_id)
+    weekly_rows = conn.execute(
+        "SELECT * FROM space_weekly_availability WHERE space_id=? ORDER BY weekday",
+        (space_id,),
+    ).fetchall()
+    by_day = {r["weekday"]: r for r in weekly_rows}
+    weekly = []
+    for day in range(7):
+        row = by_day.get(day)
+        weekly.append({
+            "weekday": day,
+            "enabled": bool(row["enabled"]) if row else False,
+            "start_minute": row["start_minute"] if row else 480,
+            "end_minute": row["end_minute"] if row else 1080,
+        })
+
+    today = datetime.now(LOCAL_TZ)
+    routine = get_routine_window(conn, space_id, today.date())
+    current_booking = conn.execute(
+        """SELECT id,start_at,end_at FROM bookings
+           WHERE space_id=? AND status IN ('confirmed','active')
+           ORDER BY start_at""",
+        (space_id,),
+    ).fetchall()
+    active_booking = None
+    for booking in current_booking:
+        if parse_dt(booking["start_at"]) <= today <= parse_dt(booking["end_at"]):
+            active_booking = dict(booking)
+            break
+    status = {
+        "bookable_now": space_is_available(conn, space_id, today, today + timedelta(minutes=15)),
+        "active_booking": active_booking,
+        "today_start_minute": routine[0] if routine else None,
+        "today_end_minute": routine[1] if routine else None,
+    }
+    exceptions = [
+        dict(r) for r in conn.execute(
+            "SELECT * FROM space_availability_exceptions WHERE space_id=? ORDER BY date",
+            (space_id,),
+        ).fetchall()
+    ]
+    conn.close()
+    return {
+        "space_id": space_id,
+        "return_shield_minutes": int(space["return_shield_minutes"] or 0),
+        "weekly": weekly,
+        "exceptions": exceptions,
+        "status": status,
+    }
+
+
+@app.put("/api/management/spaces/{space_id}/availability")
+def update_management_availability(space_id: int, payload: AvailabilityUpdate):
+    conn = db()
+    management_space(conn, space_id)
+    if len({item.weekday for item in payload.weekly}) != len(payload.weekly):
+        conn.close()
+        raise HTTPException(400, "No repitas días en el horario")
+    for item in payload.weekly:
+        if item.enabled and item.end_minute <= item.start_minute:
+            conn.close()
+            raise HTTPException(400, "La hora de fin debe ser posterior a la de inicio")
+    conn.execute(
+        "UPDATE spaces SET return_shield_minutes=? WHERE id=?",
+        (payload.return_shield_minutes, space_id),
+    )
+    for item in payload.weekly:
+        conn.execute(
+            """INSERT INTO space_weekly_availability(space_id,weekday,enabled,start_minute,end_minute)
+               VALUES (?,?,?,?,?)
+               ON CONFLICT(space_id,weekday) DO UPDATE SET
+               enabled=excluded.enabled,start_minute=excluded.start_minute,end_minute=excluded.end_minute""",
+            (space_id, item.weekday, int(item.enabled), item.start_minute, item.end_minute),
+        )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+@app.post("/api/management/spaces/{space_id}/exceptions")
+def upsert_management_exception(space_id: int, payload: AvailabilityExceptionCreate):
+    conn = db()
+    management_space(conn, space_id)
+    try:
+        datetime.fromisoformat(payload.date)
+    except ValueError:
+        conn.close()
+        raise HTTPException(400, "Fecha no válida")
+    if payload.kind not in ("unavailable", "available"):
+        conn.close()
+        raise HTTPException(400, "Tipo de excepción no válido")
+    if payload.kind == "available":
+        if payload.start_minute is None or payload.end_minute is None:
+            conn.close()
+            raise HTTPException(400, "Indica inicio y fin para una disponibilidad especial")
+        if payload.end_minute <= payload.start_minute:
+            conn.close()
+            raise HTTPException(400, "La hora de fin debe ser posterior a la de inicio")
+    conn.execute(
+        """INSERT INTO space_availability_exceptions(space_id,date,kind,start_minute,end_minute,note)
+           VALUES (?,?,?,?,?,?)
+           ON CONFLICT(space_id,date) DO UPDATE SET
+           kind=excluded.kind,start_minute=excluded.start_minute,end_minute=excluded.end_minute,note=excluded.note""",
+        (space_id, payload.date, payload.kind, payload.start_minute, payload.end_minute, payload.note),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+@app.delete("/api/management/spaces/{space_id}/exceptions/{exception_date}")
+def delete_management_exception(space_id: int, exception_date: str):
+    conn = db()
+    management_space(conn, space_id)
+    conn.execute(
+        "DELETE FROM space_availability_exceptions WHERE space_id=? AND date=?",
+        (space_id, exception_date),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+@app.post("/api/management/spaces/{space_id}/release")
+def release_management_space(space_id: int, payload: ManualOverrideCreate):
+    conn = db()
+    management_space(conn, space_id)
+    if payload.end_at <= payload.start_at:
+        conn.close()
+        raise HTTPException(400, "La hora de fin debe ser posterior")
+    clear_overlapping_overrides(conn, space_id, payload.start_at, payload.end_at)
+    conn.execute(
+        "INSERT INTO space_manual_overrides(space_id,kind,start_at,end_at,created_at) VALUES (?,'release',?,?,?)",
+        (space_id, payload.start_at.isoformat(), payload.end_at.isoformat(), datetime.now(timezone.utc).isoformat()),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+@app.post("/api/management/spaces/{space_id}/need")
+def need_management_space(space_id: int, payload: ManualOverrideCreate):
+    conn = db()
+    management_space(conn, space_id)
+    if payload.end_at <= payload.start_at:
+        conn.close()
+        raise HTTPException(400, "La hora de fin debe ser posterior")
+    bookings = conn.execute(
+        "SELECT id,start_at,end_at FROM bookings WHERE space_id=? AND status IN ('confirmed','active')",
+        (space_id,),
+    ).fetchall()
+    for booking in bookings:
+        if overlaps(
+            to_local(payload.start_at), to_local(payload.end_at),
+            to_local(parse_dt(booking["start_at"])), to_local(parse_dt(booking["end_at"])),
+        ):
+            conn.close()
+            raise HTTPException(409, "Ya hay una reserva confirmada dentro de esa franja")
+    clear_overlapping_overrides(conn, space_id, payload.start_at, payload.end_at)
+    conn.execute(
+        "INSERT INTO space_manual_overrides(space_id,kind,start_at,end_at,created_at) VALUES (?,'block',?,?,?)",
+        (space_id, payload.start_at.isoformat(), payload.end_at.isoformat(), datetime.now(timezone.utc).isoformat()),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
 @app.get("/api/spaces")
 def spaces(
     city: Optional[str] = None,
@@ -205,6 +612,8 @@ def spaces(
     cctv: bool = False,
     ev: bool = False,
     vehicle: Optional[str] = None,
+    start_at: Optional[datetime] = None,
+    end_at: Optional[datetime] = None,
 ):
     clauses = ["active=1", "security_score>=?"]
     args: list[object] = [security_min]
@@ -228,8 +637,14 @@ def spaces(
         "SELECT * FROM spaces WHERE " + " AND ".join(clauses) + " ORDER BY security_score DESC, distance_m ASC",
         args,
     ).fetchall()
+    if (start_at is None) != (end_at is None):
+        conn.close()
+        raise HTTPException(400, "Indica entrada y salida para filtrar por disponibilidad")
+    if start_at is not None and end_at is not None:
+        rows = [r for r in rows if space_is_available(conn, r["id"], start_at, end_at)]
+    out = [public_space(r) for r in rows]
     conn.close()
-    return [public_space(r) for r in rows]
+    return out
 
 
 @app.get("/api/spaces/{space_id}")
@@ -272,14 +687,9 @@ def create_booking(payload: BookingCreate):
     if space["risk_level"] in ("B","C") and not (user["identity_verified"] and user["license_verified"] and user["vehicle_plate"]):
         conn.close()
         raise HTTPException(403, "Esta plaza requiere identidad, permiso y matrícula verificados")
-    conflict = conn.execute(
-        """SELECT 1 FROM bookings WHERE space_id=? AND status IN ('confirmed','active')
-           AND NOT (end_at<=? OR start_at>=?) LIMIT 1""",
-        (payload.space_id, payload.start_at.isoformat(), payload.end_at.isoformat()),
-    ).fetchone()
-    if conflict:
+    if not space_is_available(conn, payload.space_id, payload.start_at, payload.end_at):
         conn.close()
-        raise HTTPException(409, "La plaza ya está reservada en esa franja")
+        raise HTTPException(409, "La plaza no está disponible en esa franja")
     subtotal = round(space["price_hour"] * hours, 2)
     service_fee = round(max(0.75, subtotal * 0.10), 2)
     total = round(subtotal + service_fee, 2)
@@ -374,15 +784,9 @@ def extend_booking(booking_id: int, payload: BookingExtend):
         conn.close()
         raise HTTPException(400, "La demo admite hasta 72 horas")
 
-    conflict = conn.execute(
-        """SELECT 1 FROM bookings
-           WHERE space_id=? AND id<>? AND status IN ('confirmed','active')
-           AND NOT (end_at<=? OR start_at>=?) LIMIT 1""",
-        (row["space_id"], booking_id, row["start_at"], new_end.isoformat()),
-    ).fetchone()
-    if conflict:
+    if not space_is_available(conn, row["space_id"], start, new_end, ignore_booking_id=booking_id):
         conn.close()
-        raise HTTPException(409, "No se puede ampliar: hay otra reserva después")
+        raise HTTPException(409, "No se puede ampliar: la plaza deja de estar disponible antes")
 
     subtotal = round(row["price_hour"] * hours, 2)
     service_fee = round(max(0.75, subtotal * 0.10), 2)
