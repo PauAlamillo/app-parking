@@ -61,3 +61,46 @@ Añadir a ParkingSpace:
 - quality_score_optional
 
 Estos campos son declarativos en v1; algunos podrán verificarse posteriormente mediante fotos, reservas completadas y feedback.
+
+
+## Disponibilidad real — implementación actual
+
+### space_weekly_availability
+- space_id
+- weekday (0=lunes ... 6=domingo)
+- enabled
+- start_minute
+- end_minute
+
+### space_availability_exceptions
+Una excepción por plaza y fecha:
+- space_id
+- date
+- kind: unavailable | available
+- start_minute_optional
+- end_minute_optional
+- note
+
+### space_manual_overrides
+Cambios operativos de última hora:
+- space_id
+- kind: release | block
+- start_at
+- end_at
+- created_at
+
+### ParkingSpace — campos añadidos
+- owner_user_id
+- return_shield_minutes
+
+## Reglas de disponibilidad
+La misma función de backend gobierna búsqueda, creación y ampliación de reservas.
+
+Orden lógico:
+1. un bloqueo manual solapado impide reservar;
+2. una liberación manual que cubre toda la franja permite usarla aunque quede fuera de la rutina;
+3. si no hay override, se aplica excepción de fecha o rutina semanal;
+4. Return Shield resta margen al final de la ventana;
+5. una reserva confirmada/activa siempre bloquea solapes.
+
+Un cambio del propietario nunca cancela automáticamente una reserva ya confirmada.
