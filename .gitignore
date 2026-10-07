@@ -9,3 +9,4 @@ __pycache__/
 data/*.log
 data/*.out
 .DS_Store
+app/static/media/*.jpg
