@@ -104,6 +104,17 @@ def init_db() -> None:
           space_id INTEGER NOT NULL,
           PRIMARY KEY(user_id, space_id)
         );
+        CREATE TABLE IF NOT EXISTS booking_access_events (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          space_id INTEGER NOT NULL,
+          event_type TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY(booking_id) REFERENCES bookings(id),
+          FOREIGN KEY(user_id) REFERENCES users(id),
+          FOREIGN KEY(space_id) REFERENCES spaces(id)
+        );
         CREATE TABLE IF NOT EXISTS space_weekly_availability (
           space_id INTEGER NOT NULL,
           weekday INTEGER NOT NULL,
@@ -135,6 +146,12 @@ def init_db() -> None:
         );
         """
     )
+    user_columns = {row[1] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+    if "access_guarantee_amount" not in user_columns:
+        conn.execute("ALTER TABLE users ADD COLUMN access_guarantee_amount REAL NOT NULL DEFAULT 0")
+    if "access_guarantee_status" not in user_columns:
+        conn.execute("ALTER TABLE users ADD COLUMN access_guarantee_status TEXT NOT NULL DEFAULT 'inactive'")
+
     space_columns = {row[1] for row in conn.execute("PRAGMA table_info(spaces)").fetchall()}
     if "owner_user_id" not in space_columns:
         conn.execute("ALTER TABLE spaces ADD COLUMN owner_user_id INTEGER")
@@ -143,8 +160,15 @@ def init_db() -> None:
     conn.execute("UPDATE spaces SET owner_user_id=1 WHERE id=1 AND owner_user_id IS NULL")
     if conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
         conn.execute(
-            "INSERT INTO users VALUES (1,?,?,?,?,?,?,?,?)",
-            ("Pau Demo", "pau@demo.local", 1, 1, 1, "4821 MZX", "Cupra Formentor", 96),
+            """INSERT INTO users(
+               id,name,email,phone_verified,identity_verified,license_verified,
+               vehicle_plate,vehicle_model,trust_score,access_guarantee_amount,access_guarantee_status
+               ) VALUES (1,?,?,?,?,?,?,?,?,?,?)""",
+            ("Pau Demo", "pau@demo.local", 1, 1, 1, "4821 MZX", "Cupra Formentor", 96, 50.0, "active"),
+        )
+    else:
+        conn.execute(
+            "UPDATE users SET access_guarantee_amount=50.0, access_guarantee_status='active' WHERE id=1 AND access_guarantee_status='inactive'"
         )
     if conn.execute("SELECT COUNT(*) FROM spaces").fetchone()[0] == 0:
         spaces = [
@@ -200,6 +224,17 @@ def public_space(row: sqlite3.Row) -> dict:
     out.pop("address", None)
     out.pop("private_access_note", None)
     out.pop("owner_user_id", None)
+
+    # Privacy by design: never expose a street/building identifier while browsing.
+    # Public map coordinates are deliberately shifted to an approximate zone.
+    out["title"] = f"Garaje privado · {out['neighborhood']}"
+    out["approx_address"] = f"{out['neighborhood']} · ubicación aproximada"
+    offset_x = ((int(out["id"]) * 17) % 9) - 4
+    offset_y = ((int(out["id"]) * 23) % 9) - 4
+    out["map_x"] = max(5, min(95, float(out["map_x"]) + offset_x))
+    out["map_y"] = max(5, min(95, float(out["map_y"]) + offset_y))
+    out["location_precision"] = "approximate"
+    out["location_radius_m"] = 250
     return out
 
 
@@ -405,12 +440,17 @@ def me():
     conn = db()
     row = conn.execute("SELECT * FROM users WHERE id=1").fetchone()
     favs = [r[0] for r in conn.execute("SELECT space_id FROM favorites WHERE user_id=1").fetchall()]
+    cancel_after_reveal_count = conn.execute(
+        "SELECT COUNT(*) FROM booking_access_events WHERE user_id=1 AND event_type='cancel_after_reveal'"
+    ).fetchone()[0]
     conn.close()
     data = dict(row)
     data["phone_verified"] = bool(data["phone_verified"])
     data["identity_verified"] = bool(data["identity_verified"])
     data["license_verified"] = bool(data["license_verified"])
     data["favorites"] = favs
+    data["cancel_after_reveal_count"] = cancel_after_reveal_count
+    data["access_review_required"] = cancel_after_reveal_count >= 3
     return data
 
 
@@ -684,9 +724,13 @@ def create_booking(payload: BookingCreate):
     if not space:
         conn.close()
         raise HTTPException(404, "Plaza no encontrada")
-    if space["risk_level"] in ("B","C") and not (user["identity_verified"] and user["license_verified"] and user["vehicle_plate"]):
-        conn.close()
-        raise HTTPException(403, "Esta plaza requiere identidad, permiso y matrícula verificados")
+    if space["risk_level"] in ("B","C"):
+        if not (user["identity_verified"] and user["license_verified"] and user["vehicle_plate"]):
+            conn.close()
+            raise HTTPException(403, "Esta plaza requiere identidad, permiso y matrícula verificados")
+        if user["access_guarantee_status"] != "active" or float(user["access_guarantee_amount"] or 0) < 50:
+            conn.close()
+            raise HTTPException(403, "Esta plaza requiere una garantía de acceso activa de 50 €")
     if not space_is_available(conn, payload.space_id, payload.start_at, payload.end_at):
         conn.close()
         raise HTTPException(409, "La plaza no está disponible en esa franja")
@@ -748,10 +792,20 @@ def cancel_booking(booking_id: int):
     if row["status"] != "confirmed":
         conn.close()
         raise HTTPException(409, "Solo puedes cancelar una reserva que aún no ha empezado")
+    had_reveal = conn.execute(
+        "SELECT 1 FROM booking_access_events WHERE booking_id=? AND event_type='location_revealed' LIMIT 1",
+        (booking_id,),
+    ).fetchone()
     conn.execute("UPDATE bookings SET status='cancelled' WHERE id=?", (booking_id,))
+    if had_reveal:
+        conn.execute(
+            """INSERT INTO booking_access_events(booking_id,user_id,space_id,event_type,created_at)
+               VALUES (?,?,?,?,?)""",
+            (booking_id, row["user_id"], row["space_id"], "cancel_after_reveal", datetime.now(timezone.utc).isoformat()),
+        )
     conn.commit()
     conn.close()
-    return {"ok": True, "status": "cancelled"}
+    return {"ok": True, "status": "cancelled", "cancel_after_reveal": bool(had_reveal)}
 
 
 @app.post("/api/bookings/{booking_id}/extend")
@@ -812,19 +866,52 @@ def booking_access(booking_id: int):
            WHERE b.id=? AND b.user_id=1""",
         (booking_id,),
     ).fetchone()
-    conn.close()
     if not row:
+        conn.close()
         raise HTTPException(404, "Reserva no encontrada")
-    start = datetime.fromisoformat(row["start_at"])
+    if row["status"] == "cancelled":
+        conn.close()
+        return {"locked":True,"message":"La reserva está cancelada y el acceso ya no está disponible."}
+
+    start = parse_dt(row["start_at"])
+    end = parse_dt(row["end_at"])
     now = datetime.now(start.tzinfo) if start.tzinfo else datetime.now()
     unlock_at = start - timedelta(minutes=30)
+    expire_at = end + timedelta(minutes=15)
+
     if now < unlock_at:
-        return {"locked":True,"unlock_at":unlock_at.isoformat(),"message":"Por seguridad, el acceso se muestra 30 minutos antes."}
+        conn.close()
+        return {
+            "locked":True,
+            "unlock_at":unlock_at.isoformat(),
+            "message":"Por seguridad, la dirección exacta se muestra 30 minutos antes."
+        }
+    if now > expire_at:
+        conn.close()
+        return {
+            "locked":True,
+            "expired":True,
+            "message":"La ventana de acceso ha terminado. La dirección vuelve a quedar protegida."
+        }
+
+    already_revealed = conn.execute(
+        "SELECT 1 FROM booking_access_events WHERE booking_id=? AND event_type='location_revealed' LIMIT 1",
+        (booking_id,),
+    ).fetchone()
+    if not already_revealed:
+        conn.execute(
+            """INSERT INTO booking_access_events(booking_id,user_id,space_id,event_type,created_at)
+               VALUES (?,?,?,?,?)""",
+            (booking_id, row["user_id"], row["space_id"], "location_revealed", datetime.now(timezone.utc).isoformat()),
+        )
+        conn.commit()
+    conn.close()
     return {
         "locked":False,
         "address":row["address"],
         "access_method":row["access_method"],
         "instructions":row["private_access_note"],
+        "expires_at":expire_at.isoformat(),
     }
 
 
