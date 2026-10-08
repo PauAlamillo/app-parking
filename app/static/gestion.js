@@ -52,7 +52,7 @@ function renderOwnerStatus(){
   const s=a.status;
   $("#shieldMinutes").textContent=a.return_shield_minutes;
   $("#shieldSelect").value=String(a.return_shield_minutes);
-  $("#shieldDescription").textContent=`Return Shield bloquea nuevas reservas ${a.return_shield_minutes} min antes de tu regreso previsto.`;
+  $("#shieldDescription").textContent=`El margen de regreso bloquea nuevas reservas ${a.return_shield_minutes} min antes de tu vuelta prevista.`;
   if(s.active_booking){
     $("#availabilityStatusText").textContent="Reserva activa";
     $("#availabilityUntil").textContent="Plaza ocupada ahora";
@@ -146,7 +146,7 @@ function renderSpaces(){
         <img src="${photoFor(s.id)}" alt="">
         <div class="manage-space-body">
           <div class="manage-space-top"><div><h3>${s.address}</h3><p>Plaza #${s.id} · ${s.city}</p></div><span class="state-chip">${s.bookable_now?"Disponible":"Programada"}</span></div>
-          <div class="manage-space-meta"><span>Seguridad ${s.security_score}/100</span><span>${s.access_method}</span><span>Shield ${s.return_shield_minutes} min</span></div>
+          <div class="manage-space-meta"><span>Seguridad ${s.security_score}/100</span><span>${s.access_method}</span><span>Margen ${s.return_shield_minutes} min</span></div>
           <div class="space-actions"><b>${s.price_hour.toFixed(2).replace(".",",")} €/h</b><button data-manage-space="${s.id}">Disponibilidad →</button></div>
         </div>
       </article>`).join(""):'<div class="empty-state">No tienes plazas todavía.</div>';
