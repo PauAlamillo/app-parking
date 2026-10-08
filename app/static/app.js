@@ -62,7 +62,7 @@ function cardHTML(s){
     </div>
     <div class="space-content">
       <div class="space-line">
-        <div class="space-copy"><h3>${s.title}</h3><p>${s.approx_address} · ${s.neighborhood}</p></div>
+        <div class="space-copy"><h3>${s.title}</h3><p>${s.neighborhood} · zona aproximada</p></div>
         <div class="space-price"><strong>${money(s.price_hour)}</strong><small>/ hora</small></div>
       </div>
       <div class="security-summary">
@@ -142,7 +142,7 @@ function openDetail(id){
     </div>
     <div class="detail-body">
       <div class="detail-heading">
-        <div><h2>${s.title}</h2><p>${s.approx_address} · ${s.neighborhood}, ${s.city}</p></div>
+        <div><h2>${s.title}</h2><p>${s.neighborhood}, ${s.city} · zona aproximada de ${s.location_radius_m||250} m</p></div>
         <div class="detail-price"><strong>${money(s.price_hour)}</strong><small>/ hora · ${money(s.price_day)} día</small></div>
       </div>
 
@@ -201,7 +201,7 @@ function openBooking(s){
       <label><span>Entrada</span><input id="modalStart" type="datetime-local" value="${$("#startInput").value}"></label>
       <label><span>Salida</span><input id="modalEnd" type="datetime-local" value="${$("#endInput").value}"></label>
     </div>
-    <div class="verification-box"><span>✓</span><p><b>Tu identidad y vehículo están verificados</b>${state.me.vehicle_model} · ${state.me.vehicle_plate}</p></div>
+    <div class="verification-box"><span>✓</span><p><b>Acceso protegido</b>${state.me.vehicle_model} · ${state.me.vehicle_plate} · garantía ${money(state.me.access_guarantee_amount||0)} ${state.me.access_guarantee_status==="active"?"activa":"pendiente"}</p></div>
     <div id="priceBreakdown" class="price-breakdown"></div>
     <button id="confirmBooking" class="booking-submit">Confirmar reserva · demo</button>
     <p class="booking-fineprint">No se procesa ningún pago real en este staging.</p>
@@ -326,6 +326,9 @@ async function init(){
     $("#trustScore").textContent=state.me.trust_score+"/100";
     $("#vehiclePlate").textContent=state.me.vehicle_plate;
     $("#vehicleModel").textContent=state.me.vehicle_model;
+    $("#guaranteeStatus").textContent=state.me.access_guarantee_status==="active"
+      ? `${money(state.me.access_guarantee_amount||0)} activa · reembolsable`
+      : "Pendiente";
     state.allSpaces=await api("/api/spaces?security_min=0");
     await loadSpaces();await loadBookings();
   }catch(e){toast("No se pudo cargar la demo: "+e.message)}
