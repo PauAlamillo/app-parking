@@ -153,7 +153,7 @@ function renderSpaces(){
     $$("[data-manage-space]").forEach(b=>b.addEventListener("click",async()=>{state.managedSpaceId=+b.dataset.manageSpace;await loadAvailability();showView("home")}));
   }else{
     root.innerHTML=state.demoSpaces.map(s=>`
-      <article class="manage-space-card"><img src="${s.photo}" alt=""><div class="manage-space-body"><div class="manage-space-top"><div><h3>${s.name}</h3><p>${s.id} · ${s.city}</p></div><span class="state-chip">${s.status}</span></div><div class="manage-space-meta"><span>${s.security}</span><span>${s.access}</span><span>Return Shield</span></div><div class="space-actions"><b>${s.price}</b><button data-open="space">Gestionar →</button></div></div></article>`
+      <article class="manage-space-card"><img src="${s.photo}" alt=""><div class="manage-space-body"><div class="manage-space-top"><div><h3>${s.name}</h3><p>${s.id} · ${s.city}</p></div><span class="state-chip">${s.status}</span></div><div class="manage-space-meta"><span>${s.security}</span><span>${s.access}</span><span>Margen de regreso</span></div><div class="space-actions"><b>${s.price}</b><button data-open="space">Gestionar →</button></div></div></article>`
     ).join("");
     $$('[data-open="space"]',root).forEach(b=>b.addEventListener("click",()=>openGenericModal("space")));
   }
