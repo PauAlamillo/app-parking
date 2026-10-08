@@ -230,7 +230,7 @@ a{text-decoration:none;color:inherit}
 .profile-avatar{width:64px;height:64px;background:var(--forest);color:#fff;border-radius:19px;display:grid;place-items:center;font-size:22px;font-weight:850}
 .identity-top h2{margin:0 0 3px;font-size:20px}.identity-top p{margin:0;color:var(--muted);font-size:11px}
 .profile-status{margin-left:auto;text-align:right}.profile-status span{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:850}.profile-status strong{display:block;color:var(--forest);font-size:26px;margin-top:3px}
-.verification-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.verification-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:18px}
 .verification-row>div{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;align-items:center;gap:8px}
 .verification-row>div>span{width:29px;height:29px;border-radius:9px;background:#e7f5ef;color:var(--forest);display:grid;place-items:center;font-weight:900}
 .verification-row p{margin:0}.verification-row b{display:block;font-size:11px}.verification-row small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
