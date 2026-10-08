@@ -168,3 +168,37 @@ A futuro, el objetivo técnico ideal es que una reserva cree una autorización t
 - en una ubicación;
 - dentro de una ventana horaria;
 - y quede registrada.
+
+
+## Ubicación protegida — implementación 2026-10-08
+- La API pública no devuelve dirección exacta ni instrucciones privadas.
+- Los títulos públicos no incluyen nombres de calle/edificio.
+- La posición pública se desplaza deliberadamente y se presenta como radio aproximado de 250 m.
+- La dirección exacta solo se revela desde una reserva válida 30 minutos antes del inicio.
+- La ventana de revelación termina 15 minutos después del fin de la reserva.
+- Una reserva cancelada no puede volver a consultar la dirección.
+- La primera revelación de ubicación queda registrada.
+
+## Garantía de acceso
+Para plazas de riesgo B/C, el backend exige:
+- identidad verificada;
+- permiso verificado;
+- matrícula;
+- garantía de acceso activa de al menos 50 €.
+
+La garantía es una barrera de acceso/reputación y no sustituye seguro.
+
+## Detección de abuso
+El sistema registra `cancel_after_reveal` cuando un usuario cancela después de haber obtenido la ubicación exacta.
+A partir de 3 eventos la cuenta queda marcada como `access_review_required`.
+No existe bloqueo automático todavía para evitar falsos positivos.
+
+## App Parking Access
+El hardware propio no es requisito del MVP.
+Cuando exista:
+- una unidad por acceso compartido siempre que sea viable;
+- autorización previa cuando afecte elementos comunes;
+- instalación profesional;
+- credenciales temporales;
+- dispositivo no expuesto directamente a Internet;
+- órdenes firmadas/caducables y registro de aperturas.
