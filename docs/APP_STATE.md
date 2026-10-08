@@ -30,6 +30,11 @@ Fecha: 2026-10-08
 - búsqueda filtrada por disponibilidad real
 - ampliar/cancelar reserva desde la app
 - protección contra cambios del propietario que pisen reservas confirmadas
+- ubicación pública protegida: sin calle/edificio y radio aproximado
+- dirección exacta solo dentro de la ventana de acceso
+- garantía de acceso de 50 € requerida en garajes B/C
+- registro de revelación de ubicación y cancelación posterior
+- revisión de cuenta a partir de patrones repetidos de revelar + cancelar
 - watchdog local del backend
 - túnel temporal de demostración
 
